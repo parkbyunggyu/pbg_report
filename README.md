@@ -1,2 +1,2 @@
 # pbg_report
-PostgreSQL database check script
+AWR report for PostgreSQL - database check script 
