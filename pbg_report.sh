@@ -15,7 +15,7 @@
 #------------------------------------------------------------------------------------
 
 ERSE=`stty -a | grep erase | head -n 1 | awk -F 'erase = ' {'print $2'} | cut -c 2`
-if [ "$ERSE" == "H" ]; then
+if [ "$ERSE" == "?" ]; then
 	stty erase ^H
 fi
 TODAY=`date +%Y%m%d%H%M%S`
@@ -206,6 +206,7 @@ then
 			fi
 			BINHOME=`echo ${BINHOME%\/bin*}`
 			TBINHOME=$BINHOME
+			PORT=`cat $DATA_DIR/postmaster.pid | head -n 4 | tail -n 1`
 #			PGBIN=`echo "$PGBIN/bin"`
 			NF=Y
 		elif [ "$PID" == "" ]; then
@@ -231,6 +232,7 @@ then
 					fi
 					BINHOME=`echo ${BINHOME%\/bin*}`
 					TBINHOME=$BINHOME
+					PORT=`cat $DATA_DIR/postmaster.pid | head -n 4 | tail -n 1`
 #					PGBIN=`echo "$PGBIN/bin"`
 				fi	
 			fi
@@ -258,6 +260,7 @@ then
 						fi
 						BINHOME=`echo ${BINHOME%\/bin*}`
 						TBINHOME=$BINHOME
+						PORT=`cat $DATA_DIR/postmaster.pid | head -n 4 | tail -n 1`
 #						PGBIN=`echo "$PGBIN/bin"`
 					fi	
 				fi	
@@ -288,7 +291,7 @@ then
 			then
 				PID=temppid
 			fi
-			ls -ld $DATA_DIR/postmaster.pid  &>/dev/null
+			ls -ld $DATA_DIR/postgresql.conf  &>/dev/null
 			WRIT=`echo $?`
 		done
 	fi
@@ -309,6 +312,12 @@ then
 				VER=`echo ${VER%%.*}|rev|cut -c 1-2|rev`
 			fi
 			SPATH=""
+			WRE=`cat $DATA_DIR/pg_hba.conf | grep -v "#" | grep local | head -n 1 | awk {'print $NF'}`
+			if [ "$WRE" != "trust" ]; then
+				DB=$PGDATABASE
+				USER=`cat ~/.pgpass | grep $DB | grep $PORT | grep -v "#" | head -n 1 | awk -F ':' {'print $4'}`
+				PWD=`cat ~/.pgpass | grep $DB | grep $PORT | grep -v "#" | head -n 1 | awk -F ':' {'print $NF'}`
+			fi
 		elif [ "$WRIT" != "0" ]; then
 			NOP=0
 		fi
@@ -331,7 +340,6 @@ then
 				read DB
 				echo ""
 				echo ""
-				echo ""
 				if [ "$DB" == "q" ] || [ "$DB" == "Q" ] 
 				then
 					exit 0
@@ -340,15 +348,13 @@ then
 				read USER
 				echo ""
 				echo ""
-				echo ""
 				if [ "$USER" == "q" ] || [ "$USER" == "Q" ] 
 				then
 					exit 0
 				fi
 			fi
 			echo -e "Please enter the DB USER( $USER ) PASSWORD : \c" 
-			read PW
-			echo ""
+			read PWD
 			echo ""
 			echo ""
 			BINHOME=$TBINHOME
@@ -356,7 +362,7 @@ then
 			OPT="-w -U $USER -d $DB -p $PORT "
 			chmod 600 ~/.pgpass
 			cat >> ~/.pgpass <<EOFF
-localhost:$PORT:$DB:$USER:$PW
+localhost:$PORT:$DB:$USER:$PWD
 EOFF
 			chmod 400 ~/.pgpass
 			$BINHOME/bin/psql $OPT -t -c "\! true" &>/dev/null
@@ -387,20 +393,22 @@ EOFF
 					exit 0
 				fi
 				echo -e "Please enter the SUPER USER PASSWORD : \c" 
-				read PW
+				read PWD
 				echo ""
 				echo ""
 				chmod 600 ~/.pgpass
 				cat >> ~/.pgpass <<EOFF
-localhost:$PORT:$DB:$USER:$PW
+localhost:$PORT:$DB:$USER:$PWD
 EOFF
 				chmod 400 ~/.pgpass
 				$BINHOME/bin/psql $OPT -t -c "\! true" &>/dev/null
 				IS=`echo "$?"`
+				chmod 600 ~/.pgpass
+				sed -i '$d' ~/.pgpass
 			done
 			chmod 600 ~/.pgpass
 			cat >> ~/.pgpass <<EOFF
-localhost:$PORT:$DB:$USER:$PW
+localhost:$PORT:$DB:$USER:$PWD
 EOFF
 			$BINHOME/bin/psql $OPT -t -c "select  'Database ver : ' ||version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1 >> ./pbg_ser$TODAY.log
 			VER=`$BINHOME/bin/psql $OPT -t -c "select version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1`
@@ -991,8 +999,13 @@ FROM pg_catalog.pg_tablespace
 WHERE spcname <> 'pg_global'
 ORDER BY 3;
 EOFF
+		chmod 600 ~/.pgpass
+		sed -i '$d' ~/.pgpass
+		cat >> ~/.pgpass <<EOFF
+localhost:$PORT:$DB:$USER:$PWD
+EOFF
 		"$SPATH"psql $OPT -c "\i ./pbg.sql" >> ./pbg_ser$TODAY.log
-		rm -rf ./yaho.sql
+		chmod 400 ~/.pgpass
 		cat >> ./yaho.sql << EOFF
 \! echo "---------------------------------------------------------------------------"
 \! echo "                             Dead Tuple in TABLE"
@@ -1027,6 +1040,8 @@ WHERE idstat.idx_scan < 200
 AND indexdef !~* 'unique' 
 AND pg_relation_size(idstat.indexrelid) > 1048576 
 ORDER BY idstat.relname, indexrelname;
+EOFF
+                cat >> ./yaho2.sql << EOFF
 \! echo "---------------------------------------------------------------------------"
 \! echo "                           Buffer cache Hit ratio"
 \! echo "---------------------------------------------------------------------------"
@@ -1040,21 +1055,41 @@ AND datname <> 'template0'
 ORDER BY datname, cachehitratio;
 EOFF
 		NUMM=`"$SPATH"psql $OPT -t -c "SELECT d.datname FROM pg_catalog.pg_database d WHERE d.datname <> 'template1' AND d.datname <> 'template0';" | sed '/^$/d' | wc -l`
+		echo "" >> ./pbg_ser$TODAY.log
+		echo "" >> ./pbg_ser$TODAY.log
+		"$SPATH"psql $OPT -c '\i ./yaho2.sql' >> ./pbg_ser$TODAY.log
+		rm -rf ./yaho2.sql
 		for (( i=1 ; i <= $NUMM; i++ ))
 		do
 			DBNM=`"$SPATH"psql $OPT -t -c "SELECT d.datname FROM pg_catalog.pg_database d WHERE d.datname <> 'template1' AND d.datname <> 'template0';" | sed '/^$/d' | head -n $i | tail -n 1`
+			DBNM=`echo $DBNM`
 			echo "" >> ./pbg_ser$TODAY.log
 			echo "" >> ./pbg_ser$TODAY.log
 			echo "###########################################################################" >> ./pbg_ser$TODAY.log
 			echo "                                 $DBNM" >> ./pbg_ser$TODAY.log
 			echo "###########################################################################" >> ./pbg_ser$TODAY.log
-			"$SPATH"psql $OPT -d $DBNM -c "\i ./yaho.sql" >> ./pbg_ser$TODAY.log
+                        if [ "$WRE" == "trust" ]; then
+				ROPT""
+                        else
+				ROPT="-w -U $USER -p $PORT"
+				chmod 600 ~/.pgpass
+				cat >> ~/.pgpass <<EOFF
+localhost:$PORT:$DBNM:$USER:$PWD
+EOFF
+				chmod 400 ~/.pgpass
+			fi
+			"$SPATH"psql $ROPT -d $DBNM -c '\i ./yaho.sql' >> ./pbg_ser$TODAY.log
+                        if [ "$WRE" != "trust" ]; then
+				chmod 600 ~/.pgpass
+				sed -i '$d' ~/.pgpass
+			fi
 		done
-		if [ "$LC" == "0" ]; then
+		if [ "$NOP" == "0" ]; then
 			chmod 600 ~/.pgpass
 			sed -i '$d' ~/.pgpass
-			chmod 400 ~/.pgpass
 		fi
+		rm -rf ./yaho.sql
+		chmod 400 ~/.pgpass
 		rm -rf ./pbg.sql
 	fi
 	echo "" >> ./pbg_ser$TODAY.log
