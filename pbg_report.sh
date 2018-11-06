@@ -1341,11 +1341,35 @@ mv $LOG_DIR/pbg_fatl$TODAY.log ./
 mv $LOG_DIR/pbg_panic$TODAY.log ./ 
 mv $LOG_DIR/pbg_warn$TODAY.log ./ 
 cat ./pbg_err$TODAY.log >> ./pbg_ser$TODAY.log 
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 cat ./pbg_slow$TODAY.log >> ./pbg_ser$TODAY.log 
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 cat ./pbg_temp$TODAY.log >> ./pbg_ser$TODAY.log 
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 cat ./pbg_lock$TODAY.log >> ./pbg_ser$TODAY.log 
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 cat ./pbg_sht$TODAY.log >> ./pbg_ser$TODAY.log 
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 cat ./pbg_fatl$TODAY.log >> ./pbg_ser$TODAY.log 
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 cat ./pbg_panic$TODAY.log >> ./pbg_ser$TODAY.log 
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 cat ./pbg_warn$TODAY.log >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
+echo "" >> ./pbg_ser$TODAY.log
 exit 0
