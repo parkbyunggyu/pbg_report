@@ -12,6 +12,11 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+# 시간별 로그별 정렬 
+# temp file 제목
+# temp file 쿼리
+# lock 쿼리 자르기
+# 전체 쿼리 줄이기
 #------------------------------------------------------------------------------------
 
 ERSE=`stty -a | grep erase | head -n 1 | awk -F 'erase = ' {'print $2'} | cut -c 2`
@@ -181,20 +186,30 @@ then
 	then
 		exit 0
 	fi
-	ps -ef | grep postgres | grep "postgres: checkpointer process" | head -n 1  &>/dev/null
-	if [ "$?" == "0" ]; then
-		ps -ef | grep postgres | grep "postgres: writer process" | head -n 1  &>/dev/null
-		if [ "$?" == "0" ]; then
-			ps -ef | grep postgres | grep "postgres: wal writer process" | head -n 1  &>/dev/null
-			if [ "$?" == "0" ]; then
-				ps -ef | grep postgres | grep "postgres: autovacuum launcher process " | head -n 1 &>/dev/null
-				if [ "$?" == "0" ]; then
+	HY=`ps -ef | grep postgres | grep -v "color=auto" | grep "postgres: checkpointer process"`
+	if [ "$HY" != "" ]; then
+		HY=`ps -ef | grep postgres | grep -v "color=auto" | grep "postgres: writer process"`
+		if [ "$HY" != "" ]; then
+			HY=`ps -ef | grep postgres | grep -v "color=auto" | grep "postgres: wal writer process"`
+			if [ "$HY" != "" ]; then
+				HY=`ps -ef | grep postgres | grep -v "color=auto" | grep "postgres: autovacuum launcher process"`
+				if [ "$HY" != "" ]; then
 					NF=Y
 				else
 					NF=N
+					HU=1
 				fi
+			else
+				NF=N
+				HU=1
 			fi
+		else
+			NF=N
+			HU=1
 		fi
+	else
+		NF=N
+		HU=1
 	fi
 	if [ "$NF" == "Y" ] ; then
 		PID=`cat $DATA_DIR/postmaster.pid 2>/dev/null| head -n 1`
@@ -269,15 +284,17 @@ then
 	fi
 	if [ "$NF" == "N" ] || [ "$NF" == "n" ]
 	then
-		echo -e "\n\nPlease enter the FULL PATH to the DATA location of DATABASE you want to check. \n[q is quit / p is pass]: \c"
-                read DATA_DIR
-                if [ "$DATA_DIR" == "q" ] || [ "$DATA_DIR" == "Q" ]
-                then
-                	exit 0
-                elif [ "$DATA_DIR" == "p" ] || [ "$DATA_DIR" == "P" ]
-                then
-                        PID=temppid
-                fi
+		if [ "$HU" != "1" ]; then
+			echo -e "Please enter the FULL PATH to the DATA location of DATABASE you want to check. \n[q is quit / p is pass]: \c"
+	                read DATA_DIR
+	                if [ "$DATA_DIR" == "q" ] || [ "$DATA_DIR" == "Q" ]
+	                then
+	                	exit 0
+	                elif [ "$DATA_DIR" == "p" ] || [ "$DATA_DIR" == "P" ]
+	                then
+	                        PID=temppid
+	                fi
+		fi
 		ls -ld $DATA_DIR/postgresql.conf &>/dev/null
 		WRIT=`echo $?`
 		while [ "$WRIT" != "0" ];
@@ -458,7 +475,7 @@ EOFF
 		VER=`cat $DATA_DIR/PG_VERSION`
 		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser$TODAY.log
 		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser$TODAY.log
-		echo ""
+		echo "" >> ./pbg_ser$TODAY.log
 		archive_command=`cat $DATA_DIR/postgresql.auto.conf | grep -v "#" | grep archive_command | tail -n 1`
 		ARCH_DIR=`echo ${archive_command#*cp %p}`
 		ARCH_DIR=`echo ${ARCH_DIR%%%f*}`
@@ -966,7 +983,7 @@ EOFF
 		echo "" >> ./pbg_ser$TODAY.log
 		rm -rf ./pbg_YN.file
 	fi		
-	if [ "$NF" == "Y" ] || [ "$NF" == "y" ] || [ "$PID" != "temppid" ]
+	if [ "$NF" == "Y" ] || [ "$NF" == "y" ] && [ "$PID" != "temppid" ]
 	then 
 		rm -rf ./pbg.sql
 		cat >> ./pbg.sql << EOFF
@@ -1136,12 +1153,15 @@ if [ "$?" != "0" ]; then
 fi
 LOG_PRE=`ls -rt $LOG_DIR | cut -c 1-2 | uniq -d -c | head -n 1 | awk {'print $2'}`
 MAL=`cat $LOG_DIR/$LOG_PRE* | grep LOG: | head -n 1`
+echo $MAL
 if [ "$MAL" == "" ]; then
 	echo "-------------------------------------------------------------------"
 	echo ""
 	echo "THERE IS NO LOG in LOG directory. Please check LOG directory [you set : $LOG_DIR]"
 	echo -e "PLEASE TYPE THE LOG directory FULL PATH( default : $LOG_DIRT ) [q is quit]: \c "
 	read LOG_DIR
+	LOG_PRE=`ls -rt $LOG_DIR | cut -c 1-2 | uniq -d -c | head -n 1 | awk {'print $2'}`
+	MAL=`cat $LOG_DIR/$LOG_PRE* | grep LOG: | head -n 1`
 	while [ "$MAL" == "" ]
 	do
 		echo "-------------------------------------------------------------------"
@@ -1235,6 +1255,14 @@ Q=`echo "$W 2"|awk '{printf "%.0f", $1 + $2 }'`
 AN=0
 RN=0
 AFN=`find $LOG_DIR -name "$LOG_PRE*" | wc -l`
+echo "                                      # Shutdown record Report #" >> $LOG_DIR/pbg_sht$TODAY.log
+echo "----------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_sht$TODAY.log
+echo "                                        # FATAL record Report #" >> $LOG_DIR/pbg_fatl$TODAY.log
+echo "----------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_fatl$TODAY.log
+echo "                                        # PANIC record Report #" >> $LOG_DIR/pbg_panic$TODAY.log
+echo "----------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_panic$TODAY.log
+echo "                                       # WARNING record Report #" >> $LOG_DIR/pbg_warn$TODAY.log
+echo "----------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_warn$TODAY.log
 
 while [ ${test} $FILE -ot $LOG_DIR/pbgstart.txt ]
 do
@@ -1268,10 +1296,10 @@ do
 	cat $FILEB | grep lock: | awk '{if (($'${W}'!="")&&($'${Q}'==""))print "cat '${FILEB}' \| sed -e \'\''s\;^.*.QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*..QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*...QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*.CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*..CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*...CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*.statement:\;\;i\'\''\| sed -e \'\''s\;^.*..statement:\;\;i\'\''\| sed -e \'\''s\;^.*...statement:\;\;i\'\''\| sed \'\''s/^M//gi\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\\t\/\ \/g\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\ \/\ \/g\'\''| grep \"" $0 "\""}' 2>/dev/null 1> $LOG_DIR/pbg.sh 
 	bash $LOG_DIR/pbg.sh >> $LOG_DIR/pbg_lock$TODAY.log
 	rm -rf $LOG_DIR/pbg.sh
-	cat $FILEB | grep tdow >> $LOG_DIR/pbg_sht$TODAY.log
-	cat $FILEB | grep FATAL >> $LOG_DIR/pbg_fatl$TODAY.log
-	cat $FILEB | grep PANIC >> $LOG_DIR/pbg_panic$TODAY.log
-	cat $FILEB | grep WARNING >> $LOG_DIR/pbg_warn$TODAY.log
+	cat $FILEB | grep tdow | uniq -f 5 -d -c >> $LOG_DIR/pbg_sht$TODAY.log
+	cat $FILEB | grep FATAL | uniq -f 5 -d -c >> $LOG_DIR/pbg_fatl$TODAY.log
+	cat $FILEB | grep PANIC | uniq -f 5 -d -c >> $LOG_DIR/pbg_panic$TODAY.log
+	cat $FILEB | grep WARNING | uniq -f 5 -d -c >> $LOG_DIR/pbg_warn$TODAY.log
 	touch $LOG_DIR/pbg_temp.file
 	sleep 0.3
 	rm -rf $LOG_DIR/pbg_temp.file
