@@ -35,16 +35,16 @@ elif [ "$2" == "B" ]; then
 fi
 if [ "$DAN" == "" ] || [ "$DAN" == "B" ] 
 then
-	DAN=`echo "scale=11;1073741824 / $SCAL" | bc`
+	DAN=`echo "1073741824 $SCAL"|awk '{printf "%.11f", $1 / $2}'`
 	GAB=$1
 elif [ "$DAN" == "KB" ];then
-	DAN=`echo "scale=11;1048576 / $SCAL" | bc`
+	DAN=`echo "1048576 $SCAL"|awk '{printf "%.11f", $1 / $2}'`
 elif [ "$DAN" == "MB" ];then
-	DAN=`echo "scale=11;1024 / $SCAL" | bc`
+	DAN=`echo "1024 $SCAL"|awk '{printf "%.11f", $1 / $2}'`
 elif [ "$DAN" == "GB" ];then
-	DAN=`echo "scale=11;1 / $SCAL" | bc`
+	DAN=`echo "1 $SCAL"|awk '{printf "%.11f", $1 / $2}'`
 fi
-a=`echo "scale=3;$GAB / $DAN"|bc`
+a=`echo "$GAB $DAN"|awk '{printf "%.3f", $1 / $2}'`
 echo $(printf %.3f $a)
 }
 
@@ -63,7 +63,7 @@ elif [ "$DAN" == "MB" ];then
 elif [ "$DAN" == "GB" ];then
 	DAN=1
 fi
-a=`echo "scale=3;$GAB / $DAN"|bc`
+a=`echo "$GAB $DAN"|awk '{printf "%.3f", $1 / $2}'`
 echo $(printf %.0f $a)
 }
 
@@ -126,7 +126,7 @@ NUM=1
 RW=`$2 2>/dev/null| awk {'print $'${NUM}''} | head -n 1`
 while [ "$RW" != "$1" ];
 do
-	NUM=`expr $NUM + 1`
+	NUM=`echo "$NUM 1"|awk '{printf "%.0f", $1 + $2 }'`
 	RW=`$2 2>/dev/null| awk {'print $'${NUM}''} | head -n 1`
 done
 echo $NUM
@@ -135,12 +135,12 @@ echo $NUM
 #------------------------------------------------------------------------------------
 
 BYHW() {
-CHOI=`echo "scale=1; $1 / 1048576" |bc`
-if [ 1 -eq `echo "1 > ${CHOI}" | bc` ]; then
-	CHOI=`echo "$1 / 1024" |bc`
+CHOI=`echo "$1 1048576"|awk '{printf "%.1f", $1 / $2}'`
+if [ 1 -eq `echo "1 $CHOI"|awk '{ if($1>$2) print 1; else print 0; }'` ]; then
+	CHOI=`echo "$1 1024"|awk '{printf "%.0f", $1 / $2}'`
 	P1=1
-	if [ 1 -eq `echo "1 > ${CHOI}" | bc` ]; then
-		CHOI=`echo "$1" |bc`
+	if [ 1 -eq `echo "1 $CHOI"|awk '{ if($1>$2) print 1; else print 0; }'` ]; then
+		CHOI=`echo "$1"|awk '{printf "%.0f", $1 }'`
 		P2=1
 	fi
 fi
@@ -421,8 +421,8 @@ EOFF
 			SPATH="$BINHOME/bin/"
 		fi
 		
-		echo "Core         : "`echo \`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g'\` + 1 |bc` >> ./pbg_ser$TODAY.log
-		echo "Memory       :" `echo "(\`free -m | head -n 2 | tail -n 1 | awk {'print \$2'}\`+1000/2)/1000" |bc`"GB" >> ./pbg_ser$TODAY.log
+		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser$TODAY.log
+		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser$TODAY.log
 		shared_buffers=`"$SPATH"psql $OPT -t -c "show shared_buffers"`
 		work_mem=`"$SPATH"psql $OPT -t -c "show work_mem"`
@@ -456,8 +456,8 @@ EOFF
 		NS=0
 		echo "Database ver :" `cat $DATA_DIR/PG_VERSION` >> ./pbg_ser$TODAY.log
 		VER=`cat $DATA_DIR/PG_VERSION`
-		echo "Core         : "`echo \`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g'\` + 1 |bc` >> ./pbg_ser$TODAY.log
-		echo "Memory       :" `echo "(\`free -m | head -n 2 | tail -n 1 | awk {'print \$2'}\`+1000/2)/1000" |bc`"GB" >> ./pbg_ser$TODAY.log
+		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser$TODAY.log
+		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser$TODAY.log
 		echo ""
 		archive_command=`cat $DATA_DIR/postgresql.auto.conf | grep -v "#" | grep archive_command | tail -n 1`
 		ARCH_DIR=`echo ${archive_command#*cp %p}`
@@ -584,8 +584,8 @@ EOFF
 		DD=`df $DATA_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
 		DT=`df $DATA_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
 		DS=`du -sk $DATA_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
-		DY=`echo \`echo "$DS * 100 / $DT" | bc\`%`
-		TDD=`echo "scale=1;$DT / 1048576" |bc`
+		DY=`echo "$DS 100 $DT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
+		TDD=`echo "$DT 1048576"|awk '{printf "%.1f", $1 / $2}'`
 		TDD=`echo $(printf %.0f $TDD)GB`
 		TDS=`BYHW $DS`
 		if [ "$VER" == "10" ] || [ "$VER" == "11" ]
@@ -603,8 +603,8 @@ EOFF
 		WD=`df $WAL_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
 		WT=`df $WAL_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
 		WS=`du -sk $WAL_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
-		WY=`echo \`echo "$WS * 100 / $WT" | bc\`%`
-		TWD=`echo "scale=1;$WT / 1048576" |bc`
+		WY=`echo "$WS 100 $WT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
+		TWD=`echo "$WT 1048576"|awk '{printf "%.1f", $1 / $2}'`
 		TWD=`echo $(printf %.0f $TWD)GB`
 		TWS=`BYHW $WS`
 		ARCH_DIR=`echo ${archive_command#*cp %p}`
@@ -612,8 +612,8 @@ EOFF
 		AD=`df $ARCH_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
 		AT=`df $ARCH_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
 		AS=`du -sk $ARCH_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
-		AY=`echo \`echo "$AS * 100 / $AT" |bc\`%`
-		TAD=`echo "scale=1;$AT / 1048576" |bc`
+		AY=`echo "$AS 100 $AT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
+		TAD=`echo "$AT 1048576"|awk '{printf "%.1f", $1 / $2}'`
 		TAD=`echo $(printf %.0f $TAD)GB`
 		TAS=`BYHW $AS`
 		echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
@@ -641,7 +641,7 @@ EOFF
 		        PW=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk {'print $'${PWKN}''} | head -n 1`
 		        while [ "$PW" != "Mounted" ];
 		        do
-		                PWKN=`expr $PWKN + 1`
+		                PWKN=`echo "$PWKN 1"|awk '{printf "%.0f", $1 + $2 }'`
 		                PW=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk {'print $'${PWKN}''} | head -n 1`
 		        done
 			PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df -h 2>/dev/null| awk '$'${PWKN}'' | head -n 1\``
@@ -654,13 +654,13 @@ EOFF
 				if [ "$BPARTITION" != "$PARTITION" ]; then
 					if [ "$i" != "1" ]; then
 						NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
-						PPER=`echo \`echo "$NAMK * 100 / $TT" |bc\`%`
+						PPER=`echo "$NAMK 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 						TYAS=`BYHW $NAMK`
 						CHGE=`echo "사용량 : $TYAS ($PPER)"`
 						CLIN=`grep -n pbg_sayong ./pbg_ser$TODAY.log | cut -d: -f1`
 						sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser$TODAY.log
-						NAM=`echo "$NAMK - $TOT" | bc`
-						NPER=`echo \`echo "$NAM * 100 / $TT" |bc\`%`
+						NAM=`echo "$NAMK $TOT"|awk '{printf "%.0f", $1 - $2}'`
+						NPER=`echo "$NAM 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 						NYAS=`BYHW $NAM`
 						echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser$TODAY.log
 						if [ "$BPARTITION" == "$DD" ]; then
@@ -675,29 +675,29 @@ EOFF
 					echo "" >> ./pbg_ser$TODAY.log
 					echo "TABLESPACE PARTITION$K : $PARTITION" >> ./pbg_ser$TODAY.log
 					TT=`df -k $PARTITION | awk {'print $'${VWKN}''} | grep -vw "1K-blocks"`
-					TTA=`echo "scale=1;$TT / 1048576" |bc`
+					TTA=`echo "$TT 1048576"|awk '{printf "%.1f", $1 / $2}'`
 					TTA=`echo $(printf %.0f $TTA)GB`
 					echo "총용량 : $TTA" >> ./pbg_ser$TODAY.log
 					echo "pbg_sayong" >> ./pbg_ser$TODAY.log
-					K=`expr $K + 1`
+					K=`echo "$K 1"|awk '{printf "%.0f", $1 + $2 }'`
 				fi
 				YANG=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs du -sk 2>/dev/null| awk '{print $1}' | head -n $i | tail -n 1`
 				YAS=`BYHW $YANG`
-				YAP=`echo "$YANG * 100 / $TT"|bc`
+				YAP=`echo "$YANG 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
 				echo "  -OID: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F ' ->' {'print $1'} | awk {'print $NF'} | grep -vw "0" | head -n $i | tail -n 1`" ( $YAS $YAP""% )" >> ./pbg_ser$TODAY.log
 				echo "  -DIR: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F '-> ' {'print $2'} | awk {'print $NF'}| sed '/^$/d' | head -n $i | tail -n 1` >> ./pbg_ser$TODAY.log
-				TOT=`expr $TOT + $YANG`
+				TOT=`echo "$TOT $YANG"|awk '{printf "%.0f", $1 + $2 }'`
 				echo "" >> ./pbg_ser$TODAY.log
 			done
 			BPARTITION=$PARTITION
 			NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
-			PPER=`echo \`echo "$NAMK * 100 / $TT" |bc\`%`
+			PPER=`echo "$NAMK 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
 			TYAS=`BYHW $NAMK`
 			CHGE=`echo "사용량 : $TYAS ($PPER)"`
 			CLIN=`grep -n pbg_sayong ./pbg_ser$TODAY.log | cut -d: -f1`
 			sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser$TODAY.log
-			NAM=`echo "$NAMK - $TOT" | bc`
-			NPER=`echo \`echo "$NAM * 100 / $TT" |bc\`%`
+			NAM=`echo "$NAMK $TOT"|awk '{printf "%.0f", $1 - $2}'`
+			NPER=`echo "$NAM 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
 			NYAS=`BYHW $NAM`
 			echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser$TODAY.log
 			if [ "$BPARTITION" == "$DD" ]; then
@@ -715,8 +715,8 @@ EOFF
 		memory=`free | head -n 2 | tail -n 1 | awk {'print $2'}`
 		memory=`GKN $memory`
 		
-		CC=`echo "scale=3;$memory / 4"|bc`
-		CR=`echo "scale=0;$memory / 4"|bc`
+		CC=`echo "$memory 4"|awk '{printf "%.3f", $1 / $2}'`
+		CR=`echo "$memory 4"|awk '{printf "%.0f", $1 / $2}'`
 		T=`GBN $shared_buffers G`
 		j_shared_buffers=`BIGYO $CC $T`
 		c_shared_buffers=`echo $CR"GB"`
@@ -735,8 +735,8 @@ EOFF
 		        C=268435456
 		fi
 		T=`echo $(printf %.0f $T)`
-		CCC=`echo "$C/1048576"|bc`
-		TT=`echo "$T/1048576"|bc`
+		CCC=`echo "$C 1048576"|awk '{printf "%.0f", $1 / $2}'`
+		TT=`echo "$T 1048576"|awk '{printf "%.0f", $1 / $2}'`
 		CCC=`echo $(printf %.0f $CCC)`
 		TT=`echo $(printf %.0f $TT)`
 		j_maintenance_work_mem=`BIGYO $CCC $TT`
@@ -749,7 +749,7 @@ EOFF
 	
 	
 		t_shared_buffers=`GBN $shared_buffers M`
-		C=`echo "( ( $memory * 1024 ) - ( $CC * 1024 ) - ( $C / 1048576 ) ) / $max_connections"|bc`
+		C=`echo "$memory 1024 $CC 1024 $C 1048576 $max_connections"|awk '{printf "%.0f", ( ( $1 * $2 ) - ( $3 * $4 ) - ( $5 / $6 ) ) / $7}'`
 		
 		if [ "$C" -ge "128" ]
 		then
@@ -775,8 +775,8 @@ EOFF
 		fi
 		T=`GBN $work_mem B`
 		T=`echo $(printf %.0f $T)`
-		CCC=`echo "scale=1;$C/1048576"|bc`
-		TT=`echo "scale=1;$T/1048576"|bc`
+		CCC=`echo "$C 1048576"|awk '{printf "%.1f", $1 / $2}'`
+		TT=`echo "$T 1048576"|awk '{printf "%.1f", $1 / $2}'`
 		CCC=`echo $(printf %.0f $CCC)`
 		TT=`echo $(printf %.0f $TT)`
 		j_work_mem=`BIGYO $CCC $TT`
@@ -792,8 +792,8 @@ EOFF
 		TY=`echo \\\\\\\\"${listen_addresses}"|sed 's/ //g'`
 		j_listen_addresses=`BIGYO $TY \\\\\\\*`
 		c_listen_addresses=" *          "
-		CC=`echo "scale=3;$memory * 3 / 4"|bc`
-		CR=`echo "scale=0;$memory * 3 / 4"|bc`
+		CC=`echo "$memory 3 4"|awk '{printf "%.3f", $1 * $2 / $3}'`
+		CR=`echo "$memory 3 4"|awk '{printf "%.0f", $1 * $2 / $3}'`
 		T=`GBN $effective_cache_size G`
 		j_effective_cache_size=`BIGYO $CC $T`
 		c_effective_cache_size=`echo $CR"GB"`
@@ -805,7 +805,7 @@ EOFF
 			j_connection_count="확인필요"
 		elif [ "$NF" == "Y" ] || [ "$NF" == "y" ]
 		then
-			CC=`echo "$connection_count * 100 / $max_connections"|bc`
+			CC=`echo "$connection_count 100 $max_connections"|awk '{printf "%.0f", $1 * $2 / $3}'`
 			if [ "80" -ge "$CC" ]; then
 			        j_connection_count="정상    "
 					Y=1
@@ -846,12 +846,12 @@ EOFF
 		c_max_wal_senders=" least 2    "
 		
 		
-		C=`echo "$random_page_cost * 1"| bc | sed 's/\..*$//g'`
+		C=`echo "$random_page_cost 1"| awk '{printf "%.0f", $1 * $2}'| sed 's/\..*$//g'`
 		j_random_page_cost=`BIGYO $C 2`
 		c_random_page_cost=" 2.0        "
 		
 	
-		if [ 1 -eq `echo "0.9 >= ${checkpoint_completion_target}" | bc` ] && [ 1 -eq `echo "0.5 <= ${checkpoint_completion_target}" | bc` ]
+		if [ 1 -eq `echo "0.9 $checkpoint_completion_target"|awk '{ if($1>=$2) print 1; else print 0; }'` ] && [ 1 -eq `echo "0.5 $checkpoint_c        ompletion_target"|awk '{ if($1<=$2) print 1; else print 0; }'` ]
 		then
 		        j_checkpoint_completion_target="정상    " 
 		else
@@ -877,7 +877,7 @@ EOFF
 		if [ "$VER" == "9.3" ] || [ "$VER" == "9.4" ] 
 		then
 			U=1
-			WVT=`echo "( ( $WT / 3 ) / 1024 ) / 16" | bc`
+			WVT=`echo "$WT 3 1024 16"|awk '{printf "%.0f", ( ( $1 / $2 ) / $3 ) / $4 }'`
 			MWS=`echo "$checkpoint_segments"`
 			if [ "$MWS" -gt "$WVT" ]; then
 				j_checkpoint_segments="확인필요"
@@ -888,7 +888,7 @@ EOFF
 			c_checkpoint_segments=`echo | awk -v temp="$c_checkpoint_segments" '{printf("%-11s",temp);}'`
 		else
 			U=0
-			WVT=`echo "( $WT * 0.8 ) / 1024" | bc`
+			WVT=`echo "$WT 0.8 1024"|awk '{printf "%.0f", $1 * $2 / $3}'`
 			MWS=`GBN $max_wal_size M`
 			MWS=`echo $MWS|sed 's/\..*$//g'`
 			if [ "$MWS" -gt "$WVT" ]; then
@@ -897,8 +897,8 @@ EOFF
 				j_max_wal_size="정상    "
 			fi
 			FKM=0
-			if [ 1 -eq `echo "${WVT} > 1024" | bc` ]; then
-				WWVT=`echo "scale=1;$WVT / 1024" |bc`
+			if [ 1 -eq `echo "$WVT 1024"|awk '{ if($1>$2) print 1; else print 0; }'` ]; then
+				WWVT=`echo "$WVT 1024"|awk '{printf "%.1f", $1 / $2}'`
 				c_max_wal_size=`echo $(printf %.0f $WWVT)`
 				c_max_wal_size=`echo ${c_max_wal_size}GB`
 				FKM=1
@@ -1210,7 +1210,7 @@ FD=`echo $START_DATE | cut -c 1-8`
 SD=`echo $END_DATE | cut -c 1-8`
 FD=`date -d "$FD" "+%s"`
 SD=`date -d "$SD" "+%s"`
-DD=`echo "($SD - $FD) / 86400" | bc`
+DD=`echo "$SD $FD 86400"|awk '{printf "%.0f", ( $1 - $2 ) / $3}'`
 
 while [ "$START_DATE" -gt "$END_DATE" ]
 do
@@ -1228,24 +1228,24 @@ touch -t $END_DATE $LOG_DIR/pbgend.txt
 NUM=1
 FILE=`ls -rt $LOG_DIR/$LOG_PRE* | head -n $NUM | tail -n 1`
 R=`cat $LOG_DIR/$LOG_PRE* | grep LOG: | head -n 1 | sed -e 's;LOG:.*$;;'|awk '{print NF}'`
-E=`expr $R + 2`
-T=`expr $E + 1`
-W=`expr $R + 9`
-Q=`expr $W + 2`
+E=`echo "$R 2"|awk '{printf "%.0f", $1 + $2 }'`
+T=`echo "$E 1"|awk '{printf "%.0f", $1 + $2 }'`
+W=`echo "$R 9"|awk '{printf "%.0f", $1 + $2 }'`
+Q=`echo "$W 2"|awk '{printf "%.0f", $1 + $2 }'`
 AN=0
 RN=0
 AFN=`find $LOG_DIR -name "$LOG_PRE*" | wc -l`
 
 while [ ${test} $FILE -ot $LOG_DIR/pbgstart.txt ]
 do
-	NUM=`expr $NUM + 1`
+	NUM=`echo "$NUM 1"|awk '{printf "%.0f", $1 + $2 }'`
 	FILE=`ls -rt $LOG_DIR/$LOG_PRE* | head -n $NUM | tail -n 1`
 done
 while [ ${test} $LOG_DIR/pbgstart.txt -ot $FILE -a ${test} $FILE -ot $LOG_DIR/pbgend.txt ]
 do
-	RN=`expr $RN + 1`
-	PN=`expr $RN \* 100 / $AFN`
-	NUM=`expr $NUM + 1`
+	RN=`echo "$RN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	PN=`echo "$RN 100 $AFN"|awk '{printf "%.0f", $1 * $2 / $3 }'`
+	NUM=`echo "$NUM 1"|awk '{printf "%.0f", $1 + $2 }'`
 	FILEB=$FILE
 	FILE=`ls -rt $LOG_DIR/$LOG_PRE* | head -n $NUM | tail -n 1`
 	if [ "$FILE" == "$FILEB" ]; then
@@ -1306,12 +1306,12 @@ NQ=START
 while [ "$NQ" != "" ];
 do
 	BQ=$NQ
-	BKN=`expr $BKN + 1`
+	BKN=`echo "$BKN 1"|awk '{printf "%.0f", $1 + $2 }'`
 	NQ=`cat $LOG_DIR/pbg_lock$TODAY.log | sed -n ''${BKN}'p' |awk {'print $12'}|awk -F, {'print $1'}| sed -e 's/\.$//'`
 	if [ "$BQ" != "START" ]; then
 		if [ "$BQ" != "$NQ" ]; then
 			sed -i -e ''${BKN}' i\----------------------------------------------------------------------------------------------------' $LOG_DIR/pbg_lock$TODAY.log
-			BKN=`expr $BKN + 1`
+			BKN=`echo "$BKN 1"|awk '{printf "%.0f", $1 + $2 }'`
 		fi
 	fi
 done
