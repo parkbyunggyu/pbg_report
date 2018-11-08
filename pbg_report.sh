@@ -1112,8 +1112,12 @@ EOFF
 	echo "" >> ./pbg_ser$TODAY.log
 	echo "" >> ./pbg_ser$TODAY.log
 fi
-
-LOG_DIRT=`pwd`
+if [ "$VER" == "10" ] || [ "$VER" == "11" ]
+then
+	LOG_DIRT="$DATA_DIR/log"
+else
+	LOG_DIRT="$DATA_DIR/pg_log"
+fi
 echo "-------------------------------------------------------------------"
 echo -e "PLEASE TYPE THE LOG directory FULL PATH( default : $LOG_DIRT ) : \c "
 read LOG_DIR
@@ -1122,7 +1126,12 @@ if [ "$LOG_DIR" == "" ]; then
 	echo "YOU DID'NT TYPE LOG directory. IT WILL BE INSPECT PostgreSQL LOG in CURRENT directory."
 	echo "LOG direcoty : $LOG_DIRT"
 	echo ""
-	LOG_DIR=`pwd`
+	if [ "$VER" == "10" ] || [ "$VER" == "11" ]
+	then
+	        LOG_DIR="$DATA_DIR/log"
+	else
+	        LOG_DIR="$DATA_DIR/pg_log"
+	fi
 else 
 	echo ""
 	echo "YOU TYPE BELOW LOG directory. IT WILL BE INSPECT PostgreSQL LOG in THIS directory."
@@ -1153,7 +1162,6 @@ if [ "$?" != "0" ]; then
 fi
 LOG_PRE=`ls -rt $LOG_DIR | cut -c 1-2 | uniq -d -c | head -n 1 | awk {'print $2'}`
 MAL=`cat $LOG_DIR/$LOG_PRE* 2>/dev/null | grep LOG: | head -n 1`
-echo $MAL
 if [ "$MAL" == "" ]; then
 	echo "-------------------------------------------------------------------"
 	echo ""
@@ -1296,41 +1304,41 @@ do
 	cat $FILEB | grep lock: | awk '{if (($'${W}'!="")&&($'${Q}'==""))print "cat '${FILEB}' \| sed -e \'\''s\;^.*.QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*..QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*...QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*.CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*..CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*...CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*.statement:\;\;i\'\''\| sed -e \'\''s\;^.*..statement:\;\;i\'\''\| sed -e \'\''s\;^.*...statement:\;\;i\'\''\| sed \'\''s/^M//gi\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\\t\/\ \/g\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\ \/\ \/g\'\''| grep \"" $0 "\""}' 2>/dev/null 1> $LOG_DIR/pbg.sh 
 	bash $LOG_DIR/pbg.sh >> $LOG_DIR/pbg_lock$TODAY.log
 	rm -rf $LOG_DIR/pbg.sh
-	SUN=`cat $FILEB | grep LOG | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while (index($num,"LOG")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-	DUN=`cat $FILEB | grep LOG | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-	TUN=`cat $FILEB | grep LOG | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+	SUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while (index($num,"LOG")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+	DUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+	TUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-	if [ "$SUN" != "" ] ; then
-	        MSUN=`echo "-f $SUN"`
+	if [ "$SUN" != "" ]; then
+		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep LOG | sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} >>  $LOG_DIR/pbg_sht$TODAY.log
+	cat $FILEB | grep utdow | sort -k$NSUN,21| uniq $MSUN -u -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_sht$TODAY.log
 
 	SUN=`cat $FILEB | grep FATAL | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/FATAL:/ & /g'| awk '{ num=1; while (index($num,"FATAL")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep FATAL | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/FATAL:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	TUN=`cat $FILEB | grep FATAL | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/FATAL:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-	if [ "$SUN" != "" ] ; then
-	        MSUN=`echo "-f $SUN"`
+	if [ "$SUN" != "" ]; then
+		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep FATAL | sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} >>  $LOG_DIR/pbg_fatl$TODAY.log
+	cat $FILEB | grep FATAL | sort -k$NSUN,21| uniq $MSUN -u -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_fatl$TODAY.log
 
 	SUN=`cat $FILEB | grep PANIC | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/PANIC:/ & /g'| awk '{ num=1; while (index($num,"PANIC")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep PANIC | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/PANIC:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	TUN=`cat $FILEB | grep PANIC | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/PANIC:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-	if [ "$SUN" != "" ] ; then
-	        MSUN=`echo "-f $SUN"`
+	if [ "$SUN" != "" ]; then
+		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep PANIC | sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} >>  $LOG_DIR/pbg_panic$TODAY.log
+	cat $FILEB | grep PANIC | sort -k$NSUN,21| uniq $MSUN -u -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_panic$TODAY.log
 
 	SUN=`cat $FILEB | grep WARNING | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/WARNING:/ & /g'| awk '{ num=1; while (index($num,"WARNING")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep WARNING | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/WARNING:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	TUN=`cat $FILEB | grep WARNING | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/WARNING:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-	if [ "$SUN" != "" ] ; then
-	        MSUN=`echo "-f $SUN"`
+	if [ "$SUN" != "" ]; then
+		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep WARNING | sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} >> $LOG_DIR/pbg_warn$TODAY.log
+	cat $FILEB | grep WARNING | sort -k$NSUN,21| uniq $MSUN -u -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_warn$TODAY.log
 	touch $LOG_DIR/pbg_temp.file
 	sleep 0.3
 	rm -rf $LOG_DIR/pbg_temp.file
