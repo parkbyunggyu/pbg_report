@@ -639,11 +639,11 @@ EOFF
 		echo "총용량 : $TDD" >> ./pbg_ser$TODAY.log
 		echo "사용량 : $TDS ($DY)" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser$TODAY.log
-		echo "DATA PARTITION : $WD" >> ./pbg_ser$TODAY.log
+		echo "XLOG PARTITION : $WD" >> ./pbg_ser$TODAY.log
 		echo "총용량 : $TWD" >> ./pbg_ser$TODAY.log
 		echo "사용량 : $TWS ($WY)" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser$TODAY.log
-		echo "DATA PARTITION : $AD" >> ./pbg_ser$TODAY.log
+		echo "ARCH PARTITION : $AD" >> ./pbg_ser$TODAY.log
 		echo "총용량 : $TAD" >> ./pbg_ser$TODAY.log
 		echo "사용량 : $TAS ($AY)" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser$TODAY.log
@@ -1085,7 +1085,7 @@ EOFF
 			echo "                                 $DBNM" >> ./pbg_ser$TODAY.log
 			echo "###########################################################################" >> ./pbg_ser$TODAY.log
                         if [ "$WRE" == "trust" ]; then
-				ROPT""
+				ROPT=""
                         else
 				ROPT="-w -U $USER -p $PORT"
 				chmod 600 ~/.pgpass
