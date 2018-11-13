@@ -1295,15 +1295,21 @@ do
 	if [ "$FILE" == "$FILEB" ]; then
 		FILE=$LOG_DIR/pbgend.txt
 	fi
-	while [ ! ${test} -e $LOG_DIR/pbg_temp.file -a ! ${test} $FILE -ef $LOG_DIR/pbgend.txt ];
+	#while [ ! ${test} -e $LOG_DIR/pbg_temp.file -a ! ${test} $FILE -ef $LOG_DIR/pbgend.txt ];
+	while [ ! ${test} -e $LOG_DIR/pbg_temp.file ];
 	do
-	        printf 'Inspect '${FILE}' LOG files......[─]('${PN}'%%)\r';
+		if [ "$FILE" != "$LOG_DIR/pbgend.txt" ]; then
+			FILEE=$FILE
+		else
+			FILEE=$FILEB
+		fi
+	        printf 'Inspect '${FILEE}' LOG files......[─]('${PN}'%%)\r';
 		sleep 0.05
-	        printf 'Inspect '${FILE}' LOG files......[\\]('${PN}'%%)\r';
+	        printf 'Inspect '${FILEE}' LOG files......[\\]('${PN}'%%)\r';
 		sleep 0.05
-	        printf 'Inspect '${FILE}' LOG files......[|]('${PN}'%%)\r';
+	        printf 'Inspect '${FILEE}' LOG files......[|]('${PN}'%%)\r';
 		sleep 0.05
-	        printf 'Inspect '${FILE}' LOG files......[/]('${PN}'%%)\r';
+	        printf 'Inspect '${FILEE}' LOG files......[/]('${PN}'%%)\r';
 		sleep 0.05
 	done &
 	cat $FILEB | grep ERROR: >> $LOG_DIR/pbg_err$TODAY.log
@@ -1320,7 +1326,7 @@ do
         fi
         #cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,50 | uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf"  "$'${DUN}'" "$'${TUN}'" "; printf ("%-23s",$9/1000"s ");} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
         #cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,100 | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf ("%-23s",$'${RUN}'/1000"s ");} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
-        cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,100 | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1000"s ";} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
+        cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,100 | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1000"s ";} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
 
 	cat $FILEB | grep temporary >> $LOG_DIR/pbg_temp$TODAY.log
 	cat $FILEB | grep lock: | awk '{if (($'${W}'!="")&&($'${Q}'==""))print "cat '${FILEB}' \| sed -e \'\''s\;^.*.QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*..QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*...QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*.CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*..CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*...CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*.statement:\;\;i\'\''\| sed -e \'\''s\;^.*..statement:\;\;i\'\''\| sed -e \'\''s\;^.*...statement:\;\;i\'\''\| sed \'\''s/^M//gi\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\\t\/\ \/g\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\ \/\ \/g\'\''| grep \"" $0 "\""}' 2>/dev/null 1> $LOG_DIR/pbg.sh 
@@ -1375,12 +1381,12 @@ cat $LOG_DIR/pbg_err$TODAY.log | cut -d\  -f$E- | sort | uniq -c | sort -nr | aw
 #cat $LOG_DIR/pbg_err$TODAY.log | cut -d\  -f$E- | sort | uniq -c | sort -nr >> $LOG_DIR/pbg_err2$TODAY.log
 rm -rf $LOG_DIR/pbg_err$TODAY.log
 mv $LOG_DIR/pbg_err2$TODAY.log $LOG_DIR/pbg_err$TODAY.log
-cat $LOG_DIR/pbg_slow$TODAY.log | sort -k5,100| uniq -f 3 -d -c | sort -nr | awk {'num=5; for(i=num;i<=NF;i++){ if(i==num){printf ("%-7s",$1"s ");printf $2" "$3" "; printf ("%-5s",$4"s ");} printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_slow2$TODAY.log
+cat $LOG_DIR/pbg_slow$TODAY.log | sort | uniq -i | sort -k5,100| uniq -f 3 -c | sort -nr | awk {'num=5; for(i=num;i<=NF;i++){ if(i==num){printf ("%-7s",$1"    ");printf $2" "$3"   "; printf ("%-5s",$4"s ");} printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_slow2$TODAY.log
 echo "                                      # Slow QUERY REPORT #"> $LOG_DIR/pbg_slow$TODAY.log
-echo "-------┬-------------------┬----------------------┬-------------------------------------------------" >> $LOG_DIR/pbg_slow$TODAY.log
-echo " count | Time of occurrence| Query execution time |                    SLOW query" >> $LOG_DIR/pbg_slow$TODAY.log
-echo "-------┴-------------------┴----------------------┴-------------------------------------------------" >> $LOG_DIR/pbg_slow$TODAY.log
-cat $LOG_DIR/pbg_slow2$TODAY.log >> $LOG_DIR/pbg_slow$TODAY.log
+echo "-------┬-------------------┬------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_slow$TODAY.log
+echo " count | Time of occurrence| time |                             SLOW query" >> $LOG_DIR/pbg_slow$TODAY.log
+echo "-------┴-------------------┴------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_slow$TODAY.log
+cat $LOG_DIR/pbg_slow2$TODAY.log | awk '{if ($1>='${DD}')print}' >> $LOG_DIR/pbg_slow$TODAY.log
 rm -rf $LOG_DIR/pbg_slow2$TODAY.log
 #cat $LOG_DIR/pbg_slow$TODAY.log | cut -d\  -f$T,1,2,$T- | sort -k5,21 -k3nr -r| uniq -c -f 4 |sort -nr| sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g' | awk '{if ($1>='${DD}')print}'>> $LOG_DIR/pbg_slow2$TODAY.log
 #cat $LOG_DIR/pbg_slow$TODAY.log | cut -d\  -f$T,1,2,$T- | sort -k5,21 -k3nr -r| uniq -c -f 4 |sort -nr| sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g' >> $LOG_DIR/pbg_slow2$TODAY.log
