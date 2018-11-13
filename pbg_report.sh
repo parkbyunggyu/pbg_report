@@ -1313,22 +1313,29 @@ do
 		sleep 0.05
 	done &
 	cat $FILEB | grep ERROR: >> $LOG_DIR/pbg_err$TODAY.log
-	cat $FILEB | grep -A15 duration | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/"| sed "s/^ /;/" | sed '{N;s/\n.*LOG:.*statement:/ state :/g}' | sed ':a;N;$!ba;s/\n;/ /gi' | grep duration > $LOG_DIR/pbg_slow_temp$TODAY.log
+	cat $FILEB | grep -A15 duration | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed '{N;s/\n.*LOG:.*statement:/ state :/gi}'| sed '{N;s/\n.*statement:/ state :/gi}'| sed '{s// /gi}' | sed '{s/--/ /gi}' | sed ':a;N;$!ba;s/\n;/ /gi' | grep duration > $LOG_DIR/pbg_slow_temp$TODAY.log
         SUN=`cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/duration:/ & /g'| awk '{ num=1; while (index($num,"duration")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
         DUN=`cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/duration:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
         TUN=`cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/duration:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
         NSUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
-	KSUN=$NSUN
-        #OSUN=`echo "$NSUN 4"|awk '{printf "%.0f", $1 + $2 }'`
         RUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-        if [ "$SUN" != "" ]; then
-                MSUN=`echo "-f $NSUN"`
-        fi
-        #cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,50 | uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf"  "$'${DUN}'" "$'${TUN}'" "; printf ("%-23s",$9/1000"s ");} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
-        #cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,100 | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf ("%-23s",$'${RUN}'/1000"s ");} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
-        cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,100 | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1000"s ";} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
+        cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,100 | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1000;} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
+	
+	cat $FILEB | grep -A15 "temporary file:" | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/"| sed "s/^ /;/" | sed '{N;s/\n.*statement:/ state :/gi}' | sed '{N;s/\n.*context:/ state :/gi}'| sed '{s// /gi}' | sed '{s/--/ /gi}' | sed ':a;N;$!ba;s/\n;/ /gi' | grep "temporary file:" > $LOG_DIR/pbg_temp_temp$TODAY.log
+        SUN=`cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1 ;while ($num!="size") num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        DUN=`cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        TUN=`cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        NSUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
+        RUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	
+	echo $SUN
+	echo $DUN
+	echo $TUN
+	echo $NSUN
+	echo $RUN
+        cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep "temporary file:" | sort -k$NSUN,100 | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1048576;} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_temp$TODAY.log
 
-	cat $FILEB | grep temporary >> $LOG_DIR/pbg_temp$TODAY.log
+#	cat $FILEB | grep temporary >> $LOG_DIR/pbg_temp$TODAY.log
 	cat $FILEB | grep lock: | awk '{if (($'${W}'!="")&&($'${Q}'==""))print "cat '${FILEB}' \| sed -e \'\''s\;^.*.QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*..QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*...QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*.CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*..CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*...CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*.statement:\;\;i\'\''\| sed -e \'\''s\;^.*..statement:\;\;i\'\''\| sed -e \'\''s\;^.*...statement:\;\;i\'\''\| sed \'\''s/^M//gi\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\\t\/\ \/g\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\ \/\ \/g\'\''| grep \"" $0 "\""}' 2>/dev/null 1> $LOG_DIR/pbg.sh 
 	bash $LOG_DIR/pbg.sh >> $LOG_DIR/pbg_lock$TODAY.log
 	rm -rf $LOG_DIR/pbg.sh
@@ -1381,7 +1388,7 @@ cat $LOG_DIR/pbg_err$TODAY.log | cut -d\  -f$E- | sort | uniq -c | sort -nr | aw
 #cat $LOG_DIR/pbg_err$TODAY.log | cut -d\  -f$E- | sort | uniq -c | sort -nr >> $LOG_DIR/pbg_err2$TODAY.log
 rm -rf $LOG_DIR/pbg_err$TODAY.log
 mv $LOG_DIR/pbg_err2$TODAY.log $LOG_DIR/pbg_err$TODAY.log
-cat $LOG_DIR/pbg_slow$TODAY.log | sort | uniq -i | sort -k5,100| uniq -f 3 -c | sort -nr | awk {'num=5; for(i=num;i<=NF;i++){ if(i==num){printf ("%-7s",$1"    ");printf $2" "$3"   "; printf ("%-5s",$4"s ");} printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_slow2$TODAY.log
+cat $LOG_DIR/pbg_slow$TODAY.log | sort | uniq -i | sort -k5,100| uniq -f 3 -c | sort -nr | awk {'num=5; for(i=num;i<=NF;i++){ if(i==num){printf ("%-7s",$1"    ");printf $2" "$3"   "; printf ("%5s",$4"s");} printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_slow2$TODAY.log
 echo "                                      # Slow QUERY REPORT #"> $LOG_DIR/pbg_slow$TODAY.log
 echo "-------┬-------------------┬------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_slow$TODAY.log
 echo " count | Time of occurrence| time |                             SLOW query" >> $LOG_DIR/pbg_slow$TODAY.log
@@ -1390,6 +1397,15 @@ cat $LOG_DIR/pbg_slow2$TODAY.log | awk '{if ($1>='${DD}')print}' >> $LOG_DIR/pbg
 rm -rf $LOG_DIR/pbg_slow2$TODAY.log
 #cat $LOG_DIR/pbg_slow$TODAY.log | cut -d\  -f$T,1,2,$T- | sort -k5,21 -k3nr -r| uniq -c -f 4 |sort -nr| sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g' | awk '{if ($1>='${DD}')print}'>> $LOG_DIR/pbg_slow2$TODAY.log
 #cat $LOG_DIR/pbg_slow$TODAY.log | cut -d\  -f$T,1,2,$T- | sort -k5,21 -k3nr -r| uniq -c -f 4 |sort -nr| sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g' >> $LOG_DIR/pbg_slow2$TODAY.log
+cat $LOG_DIR/pbg_temp$TODAY.log > cat
+cat $LOG_DIR/pbg_temp$TODAY.log | sort | uniq -i | sort -k5,100| uniq -f 3 -c | sort -nr | awk {'num=5; for(i=num;i<=NF;i++){ if(i==num){printf ("%-7s",$1"    ");printf $2" "$3"   "; printf ("%5s",$4"MB"); } printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_temp2$TODAY.log
+echo "                                      # TEMP QUERY REPORT #"> $LOG_DIR/pbg_temp$TODAY.log
+echo "-------┬-------------------┬------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_temp$TODAY.log
+echo " count | Time of occurrence| SIZE |                             TEMP query" >> $LOG_DIR/pbg_temp$TODAY.log
+echo "-------┴-------------------┴------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_temp$TODAY.log
+#cat $LOG_DIR/pbg_temp2$TODAY.log | awk '{if ($1>='${DD}')print}' >> $LOG_DIR/pbg_temp$TODAY.log
+cat $LOG_DIR/pbg_temp2$TODAY.log  >> $LOG_DIR/pbg_temp$TODAY.log
+#rm -rf $LOG_DIR/pbg_temp2$TODAY.log
 echo "                                          # LOCK REPORT #">> $LOG_DIR/pbg_lock2$TODAY.log
 echo "-------------------┬--------------------------------------------------------------------------------" >> $LOG_DIR/pbg_lock2$TODAY.log
 echo " Time of occurrence|                              Wait queue & Query" >> $LOG_DIR/pbg_lock2$TODAY.log
