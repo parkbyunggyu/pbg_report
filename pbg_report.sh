@@ -12,10 +12,6 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-# temp file 제목
-# temp file 쿼리
-# lock 쿼리 자르기
-# 전체 쿼리 줄이기
 #------------------------------------------------------------------------------------
 
 ERSE=`stty -a | grep erase | head -n 1 | awk -F 'erase = ' {'print $2'} | cut -c 2`
@@ -1435,7 +1431,7 @@ WUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
 HUN=`echo "$SUN 4"|awk '{printf "%.0f", $1 + $2 }'`
 JUN=`echo "$SUN 5"|awk '{printf "%.0f", $1 + $2 }'`
 sed -i "s/bkbspark/bkbsp/g" $LOG_DIR/pbg_lock_temp2$TODAY.log
-cat $LOG_DIR/pbg_lock_temp2$TODAY.log | sort | uniq -i | sort -k$EUN,$WUN | awk {'printf ("%-21s",$'${HUN}');printf " "$'${DUN}'" "$'${TUN}'" "; printf ("%-6s",$'${EUN}');printf ("%-6s",$'${RUN}');printf ("%-6s",$'${WUN}'); num='${JUN}' ;for(i=num;i<=NF;i++){printf $i" ";}print "";'} >> $LOG_DIR/pbg_lock$TODAY.log
+cat $LOG_DIR/pbg_lock_temp2$TODAY.log | sort | uniq -i | sort -k$EUN,$WUN | awk {'printf ("%-21s",$'${HUN}');printf " "$'${DUN}'" "$'${TUN}'" "; printf ("%-6s",$'${EUN}');printf ("%-6s",$'${RUN}');printf ("%-6s",$'${WUN}'); num='${JUN}' ;printf " ";for(i=num;i<=NF;i++){printf $i" ";}print "";'} | sed 's/bkbsp/     /g' >> $LOG_DIR/pbg_lock$TODAY.log
 
 #rm -rf $LOG_DIR/pbg_lock$TODAY.log
 #mv $LOG_DIR/pbg_lock2$TODAY.log $LOG_DIR/pbg_lock$TODAY.log
