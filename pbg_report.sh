@@ -1337,7 +1337,7 @@ do
 	echo $SUN
 	echo $NSUN
 	echo $MSUN
-	cat $FILEB* | grep lock: | awk {'if(""==$'${MSUN}'&&""!=$'${NSUN}'){print "cat '${FILEB}'* | grep -A15 \""$0"\""}'} >> pbg_lock_temp.sh
+	cat $FILEB* | grep lock: | awk {'if(""==$'${MSUN}'&&""!=$'${NSUN}'){print "cat '${FILEB}'* | grep -B1 -A15 \""$0"\""}'} >> pbg_lock_temp.sh
 #	rm -rf $LOG_DIR/pbg.sh
 	SUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while (index($num,"LOG")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
@@ -1419,11 +1419,15 @@ rm -rf $LOG_DIR/pbg_temp_p$TODAY.log
 bash pbg_lock_temp.sh >> $LOG_DIR/pbg_lock_temp$TODAY.log
 rm -rf pbg_lock_temp.sh
 #cat $LOG_DIR/pbg_lock$TODAY.log | sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g'| sort -k12 >> $LOG_DIR/pbg_lock2$TODAY.log
-cat $LOG_DIR/pbg_lock_temp$TODAY.log | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed '{N;s/\n.*query:/ query:/gi}'| sed '{N;s/\n.*context:/ context:/gi}' | sed '{N;s/\n.*statement:/ statement:/gi}'| sed '{s// /gi}' | sed '{s/--/ /gi}' | sed ':a;N;$!ba;s/\n;/ /gi'| sort | uniq -i -w 20 | grep lock: > $LOG_DIR/pbg_lock$TODAY.log
+SUN=`cat $LOG_DIR/pbg_lock_temp$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while (index($num,"queue:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+HUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
+JUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
+cat $LOG_DIR/pbg_lock_temp$TODAY.log | sed '{N;s/^.*waiting for //gi}'| sed '{N;s/Lock on.*\n/Lock /gi}'| awk {'if($'${SUN}'== "queue:"){num=2;if($'${HUN}'!= ""){if($'${JUN}'!= ""){for(i=num;i<=NF;i++){print " "$i;}}else{for(i=num;i<=NF;i++){print " "$i;} print " bkbspark "$1;}} else{for(i=num;i<=NF;i++){print " "$i;} print " bkbspark bkbspark "$1;}} else{for(i=num;i<=NF;i++){print " "$i;} print " "$1;}'} | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed '{N;s/\n.*query:/ query:/gi}'| sed '{N;s/\n.*context:/ context:/gi}' | sed '{N;s/\n.*statement:/ statement:/gi}'| sed '{s// /gi}' | sed '{s/--/ /gi}' | sed ':a;N;$!ba;s/\n;/ /gi'|grep lock:| sort -r | uniq -i -w 20  > $LOG_DIR/pbg_lock$TODAY.log
 #rm -rf $LOG_DIR/pbg_lock$TODAY.log
 #mv $LOG_DIR/pbg_lock2$TODAY.log $LOG_DIR/pbg_lock$TODAY.log
 BKN=4
 NQ=START
+
 while [ "$NQ" != "" ];
 do
 	BQ=$NQ
