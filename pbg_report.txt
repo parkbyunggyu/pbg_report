@@ -631,6 +631,7 @@ EOFF
 		AS=`du -sk $ARCH_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
 		AY=`echo "$AS 100 $AT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}' 2>/dev/null`
 		TAD=`echo "$AT 1048576"|awk '{printf "%.1f", $1 / $2}' 2>/dev/null`
+		TAS=`BYHW $AS`
 		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
 		echo "                                 PARTITION USAGE" >> ./pbg_ser${TODAY}.log
 		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
