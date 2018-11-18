@@ -1418,13 +1418,13 @@ rm -rf $LOG_DIR/pbg_temp_p$TODAY.log
 sed -i 's/\[/\\[/g' pbg_lock_temp.sh
 sed -i 's/\]/\\]/g' pbg_lock_temp.sh
 bash pbg_lock_temp.sh >> $LOG_DIR/pbg_lock_temp$TODAY.log
-cp $LOG_DIR/pbg_lock_temp$TODAY.log ./eeee
 rm -rf pbg_lock_temp.sh
 SUN=`cat $LOG_DIR/pbg_lock_temp$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/DETAIL:/ & /g'| awk '{ num=1; while (index($num,"queue:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 SUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
+IUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
 HUN=`echo "$SUN 4"|awk '{printf "%.0f", $1 + $2 }'`
 JUN=`echo "$SUN 5"|awk '{printf "%.0f", $1 + $2 }'`
-BUN=`echo "$SUN 6"|awk '{printf "%.0f", $1 + $2 }'`
+KUN=`echo "$SUN 6"|awk '{printf "%.0f", $1 + $2 }'`
 echo "                                      # LOCK QUERY REPORT #"> $LOG_DIR/pbg_lock$TODAY.log
 echo "--------------------┬--------------------┬------------------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_lock$TODAY.log
 echo "        KIND        | Time of occurrence |       queue      |                              query" >> $LOG_DIR/pbg_lock$TODAY.log
@@ -1433,20 +1433,25 @@ LUN=`cat $LOG_DIR/pbg_lock_temp$TODAY.log | grep DETAIL: | sed 's/[0-9][0-9][0-9
 if [ "$LUN" == "" ]; then
 	LUN=0
 fi
+GUN=`echo "$LUN 13"|awk '{printf "%.0f", $1 + $2 }'`
 OUN=`echo "$LUN 1"|awk '{printf "%.0f", $1 + $2 }'`
 #cat $LOG_DIR/pbg_lock_temp$TODAY.log |grep -v "LOG:.*acquired"|sed 's/LOG:/ & /g'|sed 's/DETAIL:/ & /g'|sed 's/STATEMENT:/ & /g'|sed 's/QUERY:/ & /g'|sed 's/CONTEXT:/ & /g'|sed '/^--/d'|sed '/^ --/d' | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed '{s/^.*waiting for //gi}'| sed '{s/Lock on.*$/Lock bkbspark/g}'| sed ':a;N;$!ba;s/\n;/ /gi'|sed -e '/bkbspark$/N;s/bkbspark\n/bkbspark /g' | awk {'if($'${SUN}'== "queue:"){num=3;if($'${HUN}'!= ""){if($'${JUN}'!= ""){for(i=num;i<=NF;i++){printf $i" ";} print "";}else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark "$1; print "";}} else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark bkbspark "$1;print "";}} else{print $0;}'}|awk {'if($'${LUN}'=="DETAIL:"||$'${LUN}'=="LOG:"){printf $0} else{printf "bkbspark "$0} print ""'}| sed -e 's/bkbspark.*statement:/bkbspark STATEMENT:/gi'| sed -e 's/bkbspark.*QUERY:/bkbspark QUERY:/gi'| sed -e 's/bkbspark.*CONTEXT:/bkbspark CONTEXT:/gi'| sed ':a;N;$!ba;s/\nbkbspark//gi'| grep lock: > $LOG_DIR/pbg_lock_temp2$TODAY.log
-cat $LOG_DIR/pbg_lock_temp$TODAY.log |sed 's/LOG:/ & /g'|sed 's/DETAIL:/ & /g'|sed 's/STATEMENT:/ & /g'|sed 's/QUERY:/ & /g'|sed 's/CONTEXT:/ & /g'|sed '/^--/d'|sed '/^ --/d' | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed ':a;N;$!ba;s/\n;/ /gi'|grep -v "LOG:.*acquired"| sed '{s/^.*waiting for //gi}'| sed '{s/Lock on.*$/Lock bkbspark/g}'|sed -e '/bkbspark$/N;s/bkbspark\n/bkbspark /g' | awk {'if($'${SUN}'=="queue:" || $'${BUN}'==""){num=3;if($'${HUN}'!= ""){if($'${JUN}'!= ""){for(i=num;i<=NF;i++){printf $i" ";} print "";}else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark "$1; print "";}} else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark bkbspark "$1;print "";}} else{print $0;}'}|awk {'if($'${LUN}'=="DETAIL:"||$'${LUN}'=="LOG:"){printf $0} else{printf "bkbspark "$0} print ""'}| sed -e 's/bkbspark.*statement:/bkbspark STATEMENT:/gi'| sed -e 's/bkbspark.*QUERY:/bkbspark QUERY:/gi'| sed -e 's/bkbspark.*CONTEXT:/bkbspark CONTEXT:/gi'| sed ':a;N;$!ba;s/\nbkbspark//gi'| grep -v queue: > $LOG_DIR/pbg_lock_temp2$TODAY.log
+cat $LOG_DIR/pbg_lock_temp$TODAY.log |sed 's/LOG:/ & /g'|sed 's/FATAL:/ & /g'|sed 's/WARING:/ & /g'|sed 's/PANIC:/ & /g'|sed 's/DETAIL:/ & /g'|sed 's/STATEMENT:/ & /g'|sed 's/QUERY:/ & /g'|sed 's/CONTEXT:/ & /g'|sed '/^--/d'|sed '/^ --/d' | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed ':a;N;$!ba;s/\n;/ /gi' |sed 's/"LOG:.*acquired.*Lock"//g'| sed '{s/^.*waiting for //gi}'| sed '{s/Lock on.*$/Lock bkbspark/g}'|sed -e '/bkbspark$/N;s/bkbspark\n/bkbspark /g' | awk {'if($'${SUN}'=="queue:" && $'${IUN}'!="" && $'${KUN}'==""){num=3;if($'${HUN}'!= ""){if($'${JUN}'!= ""){for(i=num;i<=NF;i++){printf $i" ";} printf $1; print "";}else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark "$1; print "";}} else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark bkbspark "$1;print "";}} else{print $0;}'}|awk {'if($'${LUN}'=="DETAIL:"||$'${LUN}'=="LOG:"||$'${LUN}'=="FATAL:"||$'${LUN}'=="PANIC:"||$'${LUN}'=="WARNING:"||index($1,"Lock")!=0){printf $0} else{printf "bkbspark "$0} print ""'}| sed -e 's/bkbspark.*statement:/bkbspark STATEMENT:/gi'| sed -e 's/bkbspark.*QUERY:/bkbspark QUERY:/gi'| sed -e 's/bkbspark.*CONTEXT:/bkbspark CONTEXT:/gi'| sed ':a;N;$!ba;s/\nbkbspark//gi' | awk {'if(index($1,"Lock")==0 && $'${LUN}'=="DETAIL:" && index($'${GUN}',"Lock")!=0){for(i=1;i<=NF;i++){printf $i" ";} print ""}'}> $LOG_DIR/pbg_lock_temp2$TODAY.log
 SUN=`cat $LOG_DIR/pbg_lock_temp2$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while (index($num,"queue:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 DUN=`cat $LOG_DIR/pbg_lock_temp2$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 TUN=`cat $LOG_DIR/pbg_lock_temp2$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+if [ "$SUN" == "" ]; then
+	SUN=0
+fi
 EUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
 QUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
 WUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
 HUN=`echo "$SUN 4"|awk '{printf "%.0f", $1 + $2 }'`
 JUN=`echo "$SUN 5"|awk '{printf "%.0f", $1 + $2 }'`
 RUN=`echo "$SUN 6"|awk '{printf "%.0f", $1 + $2 }'`
+IUN=`echo "$SUN 7"|awk '{printf "%.0f", $1 + $2 }'`
 sed -i "s/bkbspark/bkbsp/g" $LOG_DIR/pbg_lock_temp2$TODAY.log
-cat $LOG_DIR/pbg_lock_temp2$TODAY.log | sort | uniq -i | sort -k$EUN,$JUN | awk {'printf ("%-21s",$'${RUN}');printf " "$'${DUN}'" "$'${TUN}'" "; printf ("%-6s",$'${EUN}');printf ("%-6s",$'${QUN}');printf ("%-6s",$'${WUN}');printf ("%-6s",$'${HUN}');printf ("%-6s",$'${JUN}'); num='${RUN}' ;printf " ";for(i=num;i<=NF;i++){printf $i" ";}print "";'} | sed 's/bkbsp/     /g' >> $LOG_DIR/pbg_lock$TODAY.log
+cat $LOG_DIR/pbg_lock_temp2$TODAY.log |awk {'if (index($'${SUN}',"queue:")!=0){printf $0; print""} else{print ""}'}|sed '/^$/d' | sort | uniq -i | sort -k$EUN,$JUN | awk {'printf ("%-21s",$'${RUN}');printf " "$'${DUN}'" "$'${TUN}'" "; printf ("%-6s",$'${EUN}');printf ("%-6s",$'${QUN}');printf ("%-6s",$'${WUN}');printf ("%-6s",$'${HUN}');printf ("%-6s",$'${JUN}'); num='${IUN}' ;printf " ";for(i=num;i<=NF;i++){printf $i" ";}print "";'} | sed 's/bkbsp/     /g'|awk {'if($5!=""){printf $0;} print ""'}|sed '/^$/d' >> $LOG_DIR/pbg_lock$TODAY.log
 rm -rf $LOG_DIR/pbg_lock_temp2$TODAY.log
 BKN=4
 NQ=START
