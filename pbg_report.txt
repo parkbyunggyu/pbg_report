@@ -671,8 +671,7 @@ EOFF
 			for (( i=1 ; i <= $CNT; i++ ))  
 			do   
 				BPARTITION=$PARTITION
-				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``
-	echo S	
+				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``	
 				if [ "$BPARTITION" != "$PARTITION" ]; then
 					if [ "$i" != "1" ]; then
 						NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
