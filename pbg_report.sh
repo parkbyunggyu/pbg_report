@@ -209,6 +209,7 @@ then
 	if [ "$NF" == "Y" ] ; then
 		PID=`cat $DATA_DIR/postmaster.pid 2>/dev/null| head -n 1`
 		if [ "$PID" != "" ]; then
+			OUSER=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ print $1}'`
 			R=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ num=1; while (index($num,"bin")==0) num=num+1; print num ;}'`
 			BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null| grep $PID 2>/dev/null | awk {'print $'${R}''} 2>/dev/null`
 			if [ "$BINHOME" == "" ]; then
@@ -237,6 +238,7 @@ then
 					PID=temppid
 				else
 					PID=`cat $DATA_DIR/postmaster.pid 2>/dev/null| head -n 1`
+					OUSER=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ print $1}'`
 					R=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ num=1; while (index($num,"bin")==0) num=num+1; print num ;}'`
 					BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk {'print $'${R}''} 2>/dev/null`
 					if [ "$BINHOME" == "" ]; then
@@ -266,6 +268,7 @@ then
 						PID=temppid
 					else
 						PID=`cat $DATA_DIR/postmaster.pid 2>/dev/null| head -n 1`
+						OUSER=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ print $1}'`
 						R=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ num=1; while (index($num,"bin")==0) num=num+1; print num ;}'`
 						BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk {'print $'${R}''} 2>/dev/null`
 						if [ "$BINHOME" == "" ]; then
@@ -440,6 +443,10 @@ EOFF
 		
 		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser${TODAY}.log
 		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser${TODAY}.log
+	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $3'} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
+		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser${TODAY}.log
 		shared_buffers=`"$SPATH"psql $OPT -t -c "show shared_buffers"`
 		work_mem=`"$SPATH"psql $OPT -t -c "show work_mem"`
@@ -475,6 +482,10 @@ EOFF
 		VER=`cat $DATA_DIR/PG_VERSION`
 		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser${TODAY}.log
 		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser${TODAY}.log
+	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $3'} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
+		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser${TODAY}.log
 		archive_command=`cat $DATA_DIR/postgresql.auto.conf | grep -v "#" | grep archive_command | tail -n 1`
 		ARCH_DIR=`echo ${archive_command#*cp %p}`
@@ -672,7 +683,7 @@ EOFF
 			for (( i=1 ; i <= $CNT; i++ ))  
 			do   
 				BPARTITION=$PARTITION
-				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``
+				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``	
 				if [ "$BPARTITION" != "$PARTITION" ]; then
 					if [ "$i" != "1" ]; then
 						NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
