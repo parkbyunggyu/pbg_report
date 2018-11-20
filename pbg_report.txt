@@ -445,9 +445,9 @@ EOFF
 		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser${TODAY}.log
 		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
 	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
-		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
+		echo "load average : ""$LDA">> ./pbg_ser${TODAY}.log
 		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
-		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
+		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser${TODAY}.log
                 if [ 1 -eq `echo "5 $LDA"|awk '{ if($2>$1) print 1; else print 0; }'` ]; then
                         "You need application query tuning. This is because the load average is larger than 5.0" >> ./pbg_ser${TODAY}.log
                 fi
@@ -496,9 +496,9 @@ EOFF
 		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser${TODAY}.log
 		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
 	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
-		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
+		echo "load average : ""$LDA">> ./pbg_ser${TODAY}.log
 		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
-		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
+		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser${TODAY}.log
                 if [ 1 -eq `echo "5 $LDA"|awk '{ if($2>$1) print 1; else print 0; }'` ]; then
                         "You need application query tuning. This is because the load average is larger than 5.0" >> ./pbg_ser${TODAY}.log
                 fi
