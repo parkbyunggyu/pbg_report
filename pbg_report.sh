@@ -167,11 +167,11 @@ YON "Is This Server Database Server? [Y/n]  [q is quit]:" Y
 NS=`cat pbg_YN.file`
 if [ "$NS" == "Y" ] || [ "$NS" == "y" ]
 then
-	echo "" >> ./pbg_ser$TODAY.log
-	echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-	echo "                                SERVER SPEC" >> ./pbg_ser$TODAY.log
-	echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-	echo "SEVER ver    :" `cat /etc/redhat-release` >> ./pbg_ser$TODAY.log
+	echo "" >> ./pbg_ser${TODAY}.log
+	echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+	echo "                                SERVER SPEC" >> ./pbg_ser${TODAY}.log
+	echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+	echo "SEVER ver    :" `cat /etc/redhat-release` >> ./pbg_ser${TODAY}.log
 	NS=1
 	echo -e "Please enter the FULL PATH to the DATA location of DATABASE [q is quit]: \c"
 	read DATA_DIR
@@ -209,7 +209,9 @@ then
 	if [ "$NF" == "Y" ] ; then
 		PID=`cat $DATA_DIR/postmaster.pid 2>/dev/null| head -n 1`
 		if [ "$PID" != "" ]; then
-			BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null| grep $PID 2>/dev/null | awk {'print $NF'} 2>/dev/null`
+			OUSER=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ print $1}'`
+			R=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ num=1; while (index($num,"bin")==0) num=num+1; print num ;}'`
+			BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null| grep $PID 2>/dev/null | awk {'print $'${R}''} 2>/dev/null`
 			if [ "$BINHOME" == "" ]; then
 				echo "DATABASE at the location you specify is not currently running."
 				exit 0
@@ -236,7 +238,9 @@ then
 					PID=temppid
 				else
 					PID=`cat $DATA_DIR/postmaster.pid 2>/dev/null| head -n 1`
-					BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk {'print $NF'} 2>/dev/null`
+					OUSER=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ print $1}'`
+					R=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ num=1; while (index($num,"bin")==0) num=num+1; print num ;}'`
+					BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk {'print $'${R}''} 2>/dev/null`
 					if [ "$BINHOME" == "" ]; then
 						PID=""
 					fi
@@ -264,7 +268,9 @@ then
 						PID=temppid
 					else
 						PID=`cat $DATA_DIR/postmaster.pid 2>/dev/null| head -n 1`
-						BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk {'print $NF'} 2>/dev/null`
+						OUSER=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ print $1}'`
+						R=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk '{ num=1; while (index($num,"bin")==0) num=num+1; print num ;}'`
+						BINHOME=`ps -ef | grep postgres 2>/dev/null | grep bin 2>/dev/null | grep $PID 2>/dev/null | awk {'print $'${R}''} 2>/dev/null`
 						if [ "$BINHOME" == "" ]; then
 							PID=""
 						fi
@@ -315,7 +321,7 @@ then
 		if [ "$WRIT" == "0" ]; then
 			NOP=1
 			OPT=""
-			psql $OPT -t -c "select  'Database ver : ' ||version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1 >> ./pbg_ser$TODAY.log
+			psql $OPT -t -c "select  'Database ver : ' ||version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1 >> ./pbg_ser${TODAY}.log
 			VER=`psql $OPT -t -c "select version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1`
 			TVER=`echo ${VER%%.*}|rev|cut -c 1`
 			if [ "$TVER" == "9" ]; then
@@ -371,7 +377,7 @@ then
 			echo ""
 			BINHOME=$TBINHOME
 			PORT=`cat $DATA_DIR/postmaster.pid | head -n 4 | tail -n 1`
-			OPT="-w -U $USER -d $DB -p $PORT "
+			OPT="-w -U $USER -d $DB -p $PORT"
 			chmod 600 ~/.pgpass
 			cat >> ~/.pgpass <<EOFF
 localhost:$PORT:$DB:$USER:$PWD
@@ -413,8 +419,10 @@ EOFF
 localhost:$PORT:$DB:$USER:$PWD
 EOFF
 				chmod 400 ~/.pgpass
+				OPT="-w -U $USER -d $DB -p $PORT"
 				$BINHOME/bin/psql $OPT -t -c "\! true" &>/dev/null
 				IS=`echo "$?"`
+				echo $IS
 				chmod 600 ~/.pgpass
 				sed -i '$d' ~/.pgpass
 			done
@@ -422,7 +430,7 @@ EOFF
 			cat >> ~/.pgpass <<EOFF
 localhost:$PORT:$DB:$USER:$PWD
 EOFF
-			$BINHOME/bin/psql $OPT -t -c "select  'Database ver : ' ||version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1 >> ./pbg_ser$TODAY.log
+			$BINHOME/bin/psql $OPT -t -c "select  'Database ver : ' ||version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1 >> ./pbg_ser${TODAY}.log
 			VER=`$BINHOME/bin/psql $OPT -t -c "select version() limit 1;" |sed 's/^.//g'|sed 's/on.*$//g'|head -n 1`
 			TVER=`echo ${VER%%.*}|rev|cut -c 1`
 			if [ "$TVER" == "9" ];	then
@@ -433,9 +441,14 @@ EOFF
 			SPATH="$BINHOME/bin/"
 		fi
 		
-		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser$TODAY.log
-		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
+		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |head -n 1|awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser${TODAY}.log
+		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser${TODAY}.log
+		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
+	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
+		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
+		echo "" >> ./pbg_ser${TODAY}.log
 		shared_buffers=`"$SPATH"psql $OPT -t -c "show shared_buffers"`
 		work_mem=`"$SPATH"psql $OPT -t -c "show work_mem"`
 		maintenance_work_mem=`"$SPATH"psql $OPT -t -c "show maintenance_work_mem"`
@@ -443,9 +456,13 @@ EOFF
 		max_connections=`"$SPATH"psql $OPT -t -c "show max_connections"`
 		listen_addresses=`"$SPATH"psql $OPT -t -c "show listen_addresses"`
 		connection_count=`"$SPATH"psql $OPT -t -c "select count(*) from pg_stat_activity;"`
-		max_wal_size=`"$SPATH"psql $OPT -t -c "show max_wal_size" 2> /dev/null`
-		min_wal_size=`"$SPATH"psql $OPT -t -c "show min_wal_size" 2> /dev/null`
-		checkpoint_segments=`"$SPATH"psql $OPT -t -c "show checkpoint_segments" 2>/dev/null`
+		if [ "$VER" == "9.3" ] || [ "$VER" == "9.4" ]
+		then
+			checkpoint_segments=`"$SPATH"psql $OPT -t -c "show checkpoint_segments" 2>/dev/null`
+		else
+			max_wal_size=`"$SPATH"psql $OPT -t -c "show max_wal_size" 2> /dev/null`
+			min_wal_size=`"$SPATH"psql $OPT -t -c "show min_wal_size" 2> /dev/null`
+		fi
 		synchronous_commit=`"$SPATH"psql $OPT -t -c "show synchronous_commit"`
 		checkpoint_completion_target=`"$SPATH"psql $OPT -t -c "show checkpoint_completion_target"`
 		synchronous_commit=`"$SPATH"psql $OPT -t -c "show synchronous_commit"`
@@ -466,11 +483,16 @@ EOFF
 	elif [ "$NF" == "N" ] || [ "$NF" == "n" ] && [ "$PID" != "temppid" ]
 	then
 		NS=0
-		echo "Database ver :" `cat $DATA_DIR/PG_VERSION` >> ./pbg_ser$TODAY.log
+		echo "Database ver :" `cat $DATA_DIR/PG_VERSION` >> ./pbg_ser${TODAY}.log
 		VER=`cat $DATA_DIR/PG_VERSION`
-		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser$TODAY.log
-		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
+		echo "Core         : "`cat /proc/cpuinfo | grep "processor" | sed 's/^.*://g' |head -n 1|awk '{printf "%.0f", $1 + 1}'` >> ./pbg_ser${TODAY}.log
+		echo "Memory       :" `free -m | head -n 2 | tail -n 1 | awk '{printf "%.0f", $2 / 1000}'`"GB" >> ./pbg_ser${TODAY}.log
+		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
+	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
+		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
+		echo "" >> ./pbg_ser${TODAY}.log
 		archive_command=`cat $DATA_DIR/postgresql.auto.conf | grep -v "#" | grep archive_command | tail -n 1`
 		ARCH_DIR=`echo ${archive_command#*cp %p}`
 		ARCH_DIR=`echo ${ARCH_DIR%%%f*}`
@@ -488,9 +510,13 @@ EOFF
                 listen_addresses=`bkf $DATA_DIR listen_addresses`
                 max_connections=`bkf $DATA_DIR max_connections`
                 listen_addresses=`bkf $DATA_DIR listen_addresses`
-                max_wal_size=`bkf $DATA_DIR max_wal_size`
-                min_wal_size=`bkf $DATA_DIR min_wal_size`
-                checkpoint_segments=`bkf $DATA_DIR checkpoint_segments`
+		if [ "$VER" == "9.3" ] || [ "$VER" == "9.4" ]
+		then
+                	checkpoint_segments=`bkf $DATA_DIR checkpoint_segments`
+		else
+                	max_wal_size=`bkf $DATA_DIR max_wal_size`
+	                min_wal_size=`bkf $DATA_DIR min_wal_size`
+		fi
                 synchronous_commit=`bkf $DATA_DIR synchronous_commit`
                 checkpoint_completion_target=`bkf $DATA_DIR checkpoint_completion_target`
                 synchronous_commit=`bkf $DATA_DIR synchronous_commit`
@@ -624,25 +650,30 @@ EOFF
 		AD=`df $ARCH_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
 		AT=`df $ARCH_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
 		AS=`du -sk $ARCH_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
-		AY=`echo "$AS 100 $AT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
-		TAD=`echo "$AT 1048576"|awk '{printf "%.1f", $1 / $2}'`
-		TAD=`echo $(printf %.0f $TAD)GB`
-		TAS=`BYHW $AS`
-		echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-		echo "                                 PARTITION USAGE" >> ./pbg_ser$TODAY.log
-		echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-		echo "DATA PARTITION : $DD" >> ./pbg_ser$TODAY.log
-		echo "총용량 : $TDD" >> ./pbg_ser$TODAY.log
-		echo "사용량 : $TDS ($DY)" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
-		echo "XLOG PARTITION : $WD" >> ./pbg_ser$TODAY.log
-		echo "총용량 : $TWD" >> ./pbg_ser$TODAY.log
-		echo "사용량 : $TWS ($WY)" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
-		echo "ARCH PARTITION : $AD" >> ./pbg_ser$TODAY.log
-		echo "총용량 : $TAD" >> ./pbg_ser$TODAY.log
-		echo "사용량 : $TAS ($AY)" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
+		AY=`echo "$AS 100 $AT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}' 2>/dev/null`
+		TAD=`echo "$AT 1048576"|awk '{printf "%.1f", $1 / $2}' 2>/dev/null`
+		TAS=`BYHW $AS 2>/dev/null`
+		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+		echo "                                 PARTITION USAGE" >> ./pbg_ser${TODAY}.log
+		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+		echo "DATA PARTITION : $DD" >> ./pbg_ser${TODAY}.log
+		echo "총용량 : $TDD" >> ./pbg_ser${TODAY}.log
+		echo "사용량 : $TDS ($DY)" >> ./pbg_ser${TODAY}.log
+		echo "" >> ./pbg_ser${TODAY}.log
+		echo "XLOG PARTITION : $WD" >> ./pbg_ser${TODAY}.log
+		echo "총용량 : $TWD" >> ./pbg_ser${TODAY}.log
+		echo "사용량 : $TWS ($WY)" >> ./pbg_ser${TODAY}.log
+		echo "" >> ./pbg_ser${TODAY}.log
+		if [ "$AT" == "" ]; then
+			echo "ARCH PARTITION : No Archiving" >> ./pbg_ser${TODAY}.log
+			echo "총용량 : No Archiving" >> ./pbg_ser${TODAY}.log
+			echo "사용량 : No Archiving" >> ./pbg_ser${TODAY}.log
+		else
+			echo "ARCH PARTITION : $AD" >> ./pbg_ser${TODAY}.log
+			echo "총용량 : $TAD" >> ./pbg_ser${TODAY}.log
+			echo "사용량 : $TAS ($AY)" >> ./pbg_ser${TODAY}.log
+		fi
+		echo "" >> ./pbg_ser${TODAY}.log
 		BKB=`ls -l $DATA_DIR/pg_tblspc/ | grep -w '\->'`
 		CNT=`ls -l $DATA_DIR/pg_tblspc/ | grep -w '\->' | awk -F '> ' {'print $2'} | xargs du -sk 2>/dev/null| awk '{print $1}' | wc -l`
 		if [ "$CNT" != "0" ] && [ "$BKB" != "" ];
@@ -662,80 +693,76 @@ EOFF
 			for (( i=1 ; i <= $CNT; i++ ))  
 			do   
 				BPARTITION=$PARTITION
-				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``
+				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``	
 				if [ "$BPARTITION" != "$PARTITION" ]; then
 					if [ "$i" != "1" ]; then
 						NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
-						PPER=`echo "$NAMK 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
+						#PPER=`echo "$NAMK 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 						TYAS=`BYHW $NAMK`
 						CHGE=`echo "사용량 : $TYAS ($PPER)"`
-						CLIN=`grep -n pbg_sayong ./pbg_ser$TODAY.log | cut -d: -f1`
-						sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser$TODAY.log
+						CLIN=`grep -n pbg_sayong ./pbg_ser${TODAY}.log | cut -d: -f1`
+						sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser${TODAY}.log
 						NAM=`echo "$NAMK $TOT"|awk '{printf "%.0f", $1 - $2}'`
-						NPER=`echo "$NAM 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
+						#NPER=`echo "$NAM 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 						NYAS=`BYHW $NAM`
-						echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser$TODAY.log
+						echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser${TODAY}.log
 						if [ "$BPARTITION" == "$DD" ]; then
-							echo "   기타 용량은 DATA용량을 포함하고 있습니다" >> ./pbg_ser$TODAY.log
+							echo "   기타 용량은 DATA용량을 포함하고 있습니다" >> ./pbg_ser${TODAY}.log
 						elif [ "$BPARTITION" == "$WD" ]; then
-							echo "   기타 용량은 WAL용량을 포함하고 있습니다" >> ./pbg_ser$TODAY.log
+							echo "   기타 용량은 WAL용량을 포함하고 있습니다" >> ./pbg_ser${TODAY}.log
 						elif [ "$BPARTITION" == "$AD" ]; then 
-							echo "   기타 용량은 ARCHIVE용량을 포함하고 있습니다" >> ./pbg_ser$TODAY.log
+							echo "   기타 용량은 ARCHIVE용량을 포함하고 있습니다" >> ./pbg_ser${TODAY}.log
 						fi
 						TOT=0
 					fi
-					echo "" >> ./pbg_ser$TODAY.log
-					echo "TABLESPACE PARTITION$K : $PARTITION" >> ./pbg_ser$TODAY.log
-					TT=`df -k $PARTITION | awk {'print $'${VWKN}''} | grep -vw "1K-blocks"`
-					TTA=`echo "$TT 1048576"|awk '{printf "%.1f", $1 / $2}'`
-					TTA=`echo $(printf %.0f $TTA)GB`
-					echo "총용량 : $TTA" >> ./pbg_ser$TODAY.log
-					echo "pbg_sayong" >> ./pbg_ser$TODAY.log
+					echo "" >> ./pbg_ser${TODAY}.log
+					echo "TABLESPACE PARTITION$K : $PARTITION" >> ./pbg_ser${TODAY}.log
+					#TT=`df -k $PARTITION | awk {'print $'${VWKN}''} | grep -vw "1K-blocks"`
+					#TTA=`echo "$TT 1048576"|awk '{printf "%.1f", $1 / $2}'`
+					#TTA=`echo $(printf %.0f $TTA)GB`
+					echo "총용량 : $TTA" >> ./pbg_ser${TODAY}.log
+					echo "pbg_sayong" >> ./pbg_ser${TODAY}.log
 					K=`echo "$K 1"|awk '{printf "%.0f", $1 + $2 }'`
 				fi
 				YANG=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs du -sk 2>/dev/null| awk '{print $1}' | head -n $i | tail -n 1`
 				YAS=`BYHW $YANG`
-				YAP=`echo "$YANG 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
-				echo "  -OID: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F ' ->' {'print $1'} | awk {'print $NF'} | grep -vw "0" | head -n $i | tail -n 1`" ( $YAS $YAP""% )" >> ./pbg_ser$TODAY.log
-				echo "  -DIR: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F '-> ' {'print $2'} | awk {'print $NF'}| sed '/^$/d' | head -n $i | tail -n 1` >> ./pbg_ser$TODAY.log
+				#YAP=`echo "$YANG 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
+				echo "  -OID: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F ' ->' {'print $1'} | awk {'print $NF'} | grep -vw "0" | head -n $i | tail -n 1`" ( $YAS $YAP""% )" >> ./pbg_ser${TODAY}.log
+				echo "  -DIR: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F '-> ' {'print $2'} | awk {'print $NF'}| sed '/^$/d' | head -n $i | tail -n 1` >> ./pbg_ser${TODAY}.log
 				TOT=`echo "$TOT $YANG"|awk '{printf "%.0f", $1 + $2 }'`
-				echo "" >> ./pbg_ser$TODAY.log
+				echo "" >> ./pbg_ser${TODAY}.log
 			done
 			BPARTITION=$PARTITION
 			NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
-			PPER=`echo "$NAMK 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
+			#PPER=`echo "$NAMK 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
 			TYAS=`BYHW $NAMK`
 			CHGE=`echo "사용량 : $TYAS ($PPER)"`
-			CLIN=`grep -n pbg_sayong ./pbg_ser$TODAY.log | cut -d: -f1`
-			sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser$TODAY.log
+			CLIN=`grep -n pbg_sayong ./pbg_ser${TODAY}.log | cut -d: -f1`
+			sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser${TODAY}.log
 			NAM=`echo "$NAMK $TOT"|awk '{printf "%.0f", $1 - $2}'`
-			NPER=`echo "$NAM 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
+			#NPER=`echo "$NAM 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
 			NYAS=`BYHW $NAM`
-			echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser$TODAY.log
+			echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser${TODAY}.log
 			if [ "$BPARTITION" == "$DD" ]; then
-				echo "   기타 용량은 DATA용량을 포함하고 있습니다" >> ./pbg_ser$TODAY.log
+				echo "   기타 용량은 DATA용량을 포함하고 있습니다" >> ./pbg_ser${TODAY}.log
 			elif [ "$BPARTITION" == "$WD" ]; then
-				echo "   기타 용량은 WAL용량을 포함하고 있습니다" >> ./pbg_ser$TODAY.log
+				echo "   기타 용량은 WAL용량을 포함하고 있습니다" >> ./pbg_ser${TODAY}.log
 			elif [ "$BPARTITION" == "$AD" ]; then 
-				echo "   기타 용량은 ARCHIVE용량을 포함하고 있습니다" >> ./pbg_ser$TODAY.log
+				echo "   기타 용량은 ARCHIVE용량을 포함하고 있습니다" >> ./pbg_ser${TODAY}.log
 			fi
 			TOT=0
-			echo "" >> ./pbg_ser$TODAY.log
-			echo "" >> ./pbg_ser$TODAY.log
+			echo "" >> ./pbg_ser${TODAY}.log
+			echo "" >> ./pbg_ser${TODAY}.log
 		fi
 		
 		memory=`free | head -n 2 | tail -n 1 | awk {'print $2'}`
 		memory=`GKN $memory`
-		
 		CC=`echo "$memory 4"|awk '{printf "%.3f", $1 / $2}'`
 		CR=`echo "$memory 4"|awk '{printf "%.0f", $1 / $2}'`
 		T=`GBN $shared_buffers G`
 		j_shared_buffers=`BIGYO $CC $T`
 		c_shared_buffers=`echo $CR"GB"`
 		c_shared_buffers=`echo | awk -v temp="$c_shared_buffers" '{printf("%-11s",temp);}'`
-		
-		
-		
 		
 		T=`GBN $maintenance_work_mem B`
 		if [ "$memory" -ge "16" ];then
@@ -756,9 +783,6 @@ EOFF
 		c_maintenance_work_mem=`echo $(printf %.0f $c_maintenance_work_mem)`
 		c_maintenance_work_mem=`echo ${c_maintenance_work_mem}MB`
 		c_maintenance_work_mem=`echo | awk -v temp="$c_maintenance_work_mem" '{printf("%-11s",temp);}'`
-	
-	
-	
 	
 		t_shared_buffers=`GBN $shared_buffers M`
 		C=`echo "$memory 1024 $CC 1024 $C 1048576 $max_connections"|awk '{printf "%.0f", ( ( $1 * $2 ) - ( $3 * $4 ) - ( $5 / $6 ) ) / $7}'`
@@ -797,10 +821,6 @@ EOFF
 		c_work_mem=`echo ${c_work_mem}MB`
 		c_work_mem=`echo | awk -v temp="$c_work_mem" '{printf("%-11s",temp);}'`
 		
-	
-	
-
-
 		TY=`echo \\\\\\\\"${listen_addresses}"|sed 's/ //g'`
 		j_listen_addresses=`BIGYO $TY \\\\\\\*`
 		c_listen_addresses=" *          "
@@ -930,52 +950,52 @@ EOFF
 			c_min_wal_size=`echo | awk -v temp="$c_min_wal_size" '{printf("%-11s",temp);}'`
 		fi
 		
-		echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-		echo "                             PARAMETER CHECK" >> ./pbg_ser$TODAY.log
-		echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-		echo "NO|            PARAMETER            |   CHECK  |  RECOMMAND |  YOUR_VALUE" >> ./pbg_ser$TODAY.log
-		echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-		echo "01| (s)shared_buffers               | ""$j_shared_buffers"  "|"" $c_shared_buffers""|" $shared_buffers >> ./pbg_ser$TODAY.log
-		echo "02| (l)work_mem                     | ""$j_work_mem"  "|"" $c_work_mem""|" $work_mem >> ./pbg_ser$TODAY.log
-		echo "03| (l)maintenance_work_mem         | ""$j_maintenance_work_mem"  "|"" $c_maintenance_work_mem""|" $maintenance_work_mem >> ./pbg_ser$TODAY.log
-		echo "04| (s)listen_addresses             | ""$j_listen_addresses"  "|""$c_listen_addresses""|" `echo \\\"${listen_addresses}"|sed 's/ //g'` | sed 's/\\//g' >> ./pbg_ser$TODAY.log
-		echo "05| (s)max_connections              | ""$j_connection_count"  "|""$c_connection_count""|" $max_connections >> ./pbg_ser$TODAY.log
+		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+		echo "                             PARAMETER CHECK" >> ./pbg_ser${TODAY}.log
+		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+		echo "NO|            PARAMETER            |   CHECK  |  RECOMMAND |  YOUR_VALUE" >> ./pbg_ser${TODAY}.log
+		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+		echo "01| (s)shared_buffers               | ""$j_shared_buffers"  "|"" $c_shared_buffers""|" $shared_buffers >> ./pbg_ser${TODAY}.log
+		echo "02| (l)work_mem                     | ""$j_work_mem"  "|"" $c_work_mem""|" $work_mem >> ./pbg_ser${TODAY}.log
+		echo "03| (l)maintenance_work_mem         | ""$j_maintenance_work_mem"  "|"" $c_maintenance_work_mem""|" $maintenance_work_mem >> ./pbg_ser${TODAY}.log
+		echo "04| (s)listen_addresses             | ""$j_listen_addresses"  "|""$c_listen_addresses""|" `echo \\\"${listen_addresses}"|sed 's/ //g'` | sed 's/\\//g' >> ./pbg_ser${TODAY}.log
+		echo "05| (s)max_connections              | ""$j_connection_count"  "|""$c_connection_count""|" $max_connections >> ./pbg_ser${TODAY}.log
 		if [ "$VER" == "9.3" ] || [ "$VER" == "9.4" ]
 		then
-			echo "06| (s)checkpoint_segments          | ""$j_checkpoint_segments"  "|""$c_checkpoint_segments""|" $checkpoint_segments >> ./pbg_ser$TODAY.log
-			echo "07| (l)checkpoint_completion_target | ""$j_checkpoint_completion_target"  "|""$c_checkpoint_completion_target""|" $checkpoint_completion_target >> ./pbg_ser$TODAY.log
-			echo "08| (s)synchronous_commit           | ""$j_synchronous_commit"  "|""$c_synchronous_commit""|" $synchronous_commit >> ./pbg_ser$TODAY.log
-			echo "09| (s)archive_mode                 | ""$j_archive_mode"  "|""$c_archive_mode""|" $archive_mode >> ./pbg_ser$TODAY.log
-			echo "10| (s)max_wal_senders              | ""$j_max_wal_senders"  "|""$c_max_wal_senders""|" $max_wal_senders >> ./pbg_ser$TODAY.log
-			echo "11| (l)random_page_cost             | ""$j_random_page_cost"  "|""$c_random_page_cost""|" $random_page_cost >> ./pbg_ser$TODAY.log
-			echo "12| (l)effective_cache_size         | ""$j_effective_cache_size"  "|"" $c_effective_cache_size""|" $effective_cache_size >> ./pbg_ser$TODAY.log
-			echo "13| (s)logging_collector            | ""$j_logging_collector"  "|""$c_logging_collector""|" $logging_collector >> ./pbg_ser$TODAY.log
-			echo "14| (l)client_min_messages          | ""$j_client_min_messages"  "|""$c_client_min_messages""|" $client_min_messages >> ./pbg_ser$TODAY.log
-			echo "15| (l)log_min_messages             | ""$j_log_min_messages"  "|""$c_log_min_messages""|" $log_min_messages >> ./pbg_ser$TODAY.log
-			echo "16| (l)log_min_error_statement      | ""$j_log_min_error_statement"  "|""$c_log_min_error_statement""|" $log_min_error_statement >> ./pbg_ser$TODAY.log
-			echo "17| (l)log_min_duration_statement   | ""$j_log_min_duration_statement"  "|""$c_log_min_duration_statement""|" $log_min_duration_statement >> ./pbg_ser$TODAY.log
-			echo "18| (l)log_lock_waits               | ""$j_log_lock_waits"  "|""$c_log_lock_waits""|" $log_lock_waits >> ./pbg_ser$TODAY.log
-			echo "19| (l)log_temp_files               | ""$j_log_temp_files"  "|""$c_log_temp_files""|" $log_temp_files >> ./pbg_ser$TODAY.log
+			echo "06| (s)checkpoint_segments          | ""$j_checkpoint_segments"  "|""$c_checkpoint_segments""|" $checkpoint_segments >> ./pbg_ser${TODAY}.log
+			echo "07| (l)checkpoint_completion_target | ""$j_checkpoint_completion_target"  "|""$c_checkpoint_completion_target""|" $checkpoint_completion_target >> ./pbg_ser${TODAY}.log
+			echo "08| (s)synchronous_commit           | ""$j_synchronous_commit"  "|""$c_synchronous_commit""|" $synchronous_commit >> ./pbg_ser${TODAY}.log
+			echo "09| (s)archive_mode                 | ""$j_archive_mode"  "|""$c_archive_mode""|" $archive_mode >> ./pbg_ser${TODAY}.log
+			echo "10| (s)max_wal_senders              | ""$j_max_wal_senders"  "|""$c_max_wal_senders""|" $max_wal_senders >> ./pbg_ser${TODAY}.log
+			echo "11| (l)random_page_cost             | ""$j_random_page_cost"  "|""$c_random_page_cost""|" $random_page_cost >> ./pbg_ser${TODAY}.log
+			echo "12| (l)effective_cache_size         | ""$j_effective_cache_size"  "|"" $c_effective_cache_size""|" $effective_cache_size >> ./pbg_ser${TODAY}.log
+			echo "13| (s)logging_collector            | ""$j_logging_collector"  "|""$c_logging_collector""|" $logging_collector >> ./pbg_ser${TODAY}.log
+			echo "14| (l)client_min_messages          | ""$j_client_min_messages"  "|""$c_client_min_messages""|" $client_min_messages >> ./pbg_ser${TODAY}.log
+			echo "15| (l)log_min_messages             | ""$j_log_min_messages"  "|""$c_log_min_messages""|" $log_min_messages >> ./pbg_ser${TODAY}.log
+			echo "16| (l)log_min_error_statement      | ""$j_log_min_error_statement"  "|""$c_log_min_error_statement""|" $log_min_error_statement >> ./pbg_ser${TODAY}.log
+			echo "17| (l)log_min_duration_statement   | ""$j_log_min_duration_statement"  "|""$c_log_min_duration_statement""|" $log_min_duration_statement >> ./pbg_ser${TODAY}.log
+			echo "18| (l)log_lock_waits               | ""$j_log_lock_waits"  "|""$c_log_lock_waits""|" $log_lock_waits >> ./pbg_ser${TODAY}.log
+			echo "19| (l)log_temp_files               | ""$j_log_temp_files"  "|""$c_log_temp_files""|" $log_temp_files >> ./pbg_ser${TODAY}.log
 		else
-			echo "06| (s)max_wal_size                 | ""$j_max_wal_size"  "|"" $c_max_wal_size""|" $max_wal_size >> ./pbg_ser$TODAY.log
-			echo "07| (s)min_wal_size                 | ""$j_min_wal_size"  "|"" $c_min_wal_size""|" $min_wal_size >> ./pbg_ser$TODAY.log
-			echo "08| (l)checkpoint_completion_target | ""$j_checkpoint_completion_target"  "|""$c_checkpoint_completion_target""|" $checkpoint_completion_target >> ./pbg_ser$TODAY.log
-			echo "09| (s)synchronous_commit           | ""$j_synchronous_commit"  "|""$c_synchronous_commit""|" $synchronous_commit >> ./pbg_ser$TODAY.log
-			echo "10| (s)archive_mode                 | ""$j_archive_mode"  "|""$c_archive_mode""|" $archive_mode >> ./pbg_ser$TODAY.log
-			echo "11| (s)max_wal_senders              | ""$j_max_wal_senders"  "|""$c_max_wal_senders""|" $max_wal_senders >> ./pbg_ser$TODAY.log
-			echo "12| (l)random_page_cost             | ""$j_random_page_cost"  "|""$c_random_page_cost""|" $random_page_cost >> ./pbg_ser$TODAY.log
-			echo "13| (l)effective_cache_size         | ""$j_effective_cache_size"  "|"" $c_effective_cache_size""|" $effective_cache_size >> ./pbg_ser$TODAY.log
-			echo "14| (s)logging_collector            | ""$j_logging_collector"  "|""$c_logging_collector""|" $logging_collector >> ./pbg_ser$TODAY.log
-			echo "15| (l)client_min_messages          | ""$j_client_min_messages"  "|""$c_client_min_messages""|" $client_min_messages >> ./pbg_ser$TODAY.log
-			echo "16| (l)log_min_messages             | ""$j_log_min_messages"  "|""$c_log_min_messages""|" $log_min_messages >> ./pbg_ser$TODAY.log
-			echo "17| (l)log_min_error_statement      | ""$j_log_min_error_statement"  "|""$c_log_min_error_statement""|" $log_min_error_statement >> ./pbg_ser$TODAY.log
-			echo "18| (l)log_min_duration_statement   | ""$j_log_min_duration_statement"  "|""$c_log_min_duration_statement""|" $log_min_duration_statement >> ./pbg_ser$TODAY.log
-			echo "19| (l)log_lock_waits               | ""$j_log_lock_waits"  "|""$c_log_lock_waits""|" $log_lock_waits >> ./pbg_ser$TODAY.log
-			echo "20| (l)log_temp_files               | ""$j_log_temp_files"  "|""$c_log_temp_files""|" $log_temp_files >> ./pbg_ser$TODAY.log
+			echo "06| (s)max_wal_size                 | ""$j_max_wal_size"  "|"" $c_max_wal_size""|" $max_wal_size >> ./pbg_ser${TODAY}.log
+			echo "07| (s)min_wal_size                 | ""$j_min_wal_size"  "|"" $c_min_wal_size""|" $min_wal_size >> ./pbg_ser${TODAY}.log
+			echo "08| (l)checkpoint_completion_target | ""$j_checkpoint_completion_target"  "|""$c_checkpoint_completion_target""|" $checkpoint_completion_target >> ./pbg_ser${TODAY}.log
+			echo "09| (s)synchronous_commit           | ""$j_synchronous_commit"  "|""$c_synchronous_commit""|" $synchronous_commit >> ./pbg_ser${TODAY}.log
+			echo "10| (s)archive_mode                 | ""$j_archive_mode"  "|""$c_archive_mode""|" $archive_mode >> ./pbg_ser${TODAY}.log
+			echo "11| (s)max_wal_senders              | ""$j_max_wal_senders"  "|""$c_max_wal_senders""|" $max_wal_senders >> ./pbg_ser${TODAY}.log
+			echo "12| (l)random_page_cost             | ""$j_random_page_cost"  "|""$c_random_page_cost""|" $random_page_cost >> ./pbg_ser${TODAY}.log
+			echo "13| (l)effective_cache_size         | ""$j_effective_cache_size"  "|"" $c_effective_cache_size""|" $effective_cache_size >> ./pbg_ser${TODAY}.log
+			echo "14| (s)logging_collector            | ""$j_logging_collector"  "|""$c_logging_collector""|" $logging_collector >> ./pbg_ser${TODAY}.log
+			echo "15| (l)client_min_messages          | ""$j_client_min_messages"  "|""$c_client_min_messages""|" $client_min_messages >> ./pbg_ser${TODAY}.log
+			echo "16| (l)log_min_messages             | ""$j_log_min_messages"  "|""$c_log_min_messages""|" $log_min_messages >> ./pbg_ser${TODAY}.log
+			echo "17| (l)log_min_error_statement      | ""$j_log_min_error_statement"  "|""$c_log_min_error_statement""|" $log_min_error_statement >> ./pbg_ser${TODAY}.log
+			echo "18| (l)log_min_duration_statement   | ""$j_log_min_duration_statement"  "|""$c_log_min_duration_statement""|" $log_min_duration_statement >> ./pbg_ser${TODAY}.log
+			echo "19| (l)log_lock_waits               | ""$j_log_lock_waits"  "|""$c_log_lock_waits""|" $log_lock_waits >> ./pbg_ser${TODAY}.log
+			echo "20| (l)log_temp_files               | ""$j_log_temp_files"  "|""$c_log_temp_files""|" $log_temp_files >> ./pbg_ser${TODAY}.log
 		fi
-		echo "---------------------------------------------------------------------------" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
+		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
+		echo "" >> ./pbg_ser${TODAY}.log
+		echo "" >> ./pbg_ser${TODAY}.log
 		rm -rf ./pbg_YN.file
 	fi		
 	if [ "$NF" == "Y" ] || [ "$NF" == "y" ] && [ "$PID" != "temppid" ]
@@ -1016,7 +1036,7 @@ EOFF
 		cat >> ~/.pgpass <<EOFF
 localhost:$PORT:$DB:$USER:$PWD
 EOFF
-		"$SPATH"psql $OPT -c "\i ./pbg.sql" >> ./pbg_ser$TODAY.log
+		"$SPATH"psql $OPT -c "\i ./pbg.sql" >> ./pbg_ser${TODAY}.log
 		chmod 400 ~/.pgpass
 		cat >> ./yaho.sql << EOFF
 \! echo "---------------------------------------------------------------------------"
@@ -1067,19 +1087,19 @@ AND datname <> 'template0'
 ORDER BY datname, cachehitratio;
 EOFF
 		NUMM=`"$SPATH"psql $OPT -t -c "SELECT d.datname FROM pg_catalog.pg_database d WHERE d.datname <> 'template1' AND d.datname <> 'template0';" | sed '/^$/d' | wc -l`
-		echo "" >> ./pbg_ser$TODAY.log
-		echo "" >> ./pbg_ser$TODAY.log
-		"$SPATH"psql $OPT -c '\i ./yaho2.sql' >> ./pbg_ser$TODAY.log
+		echo "" >> ./pbg_ser${TODAY}.log
+		echo "" >> ./pbg_ser${TODAY}.log
+		"$SPATH"psql $OPT -c '\i ./yaho2.sql' >> ./pbg_ser${TODAY}.log
 		rm -rf ./yaho2.sql
 		for (( i=1 ; i <= $NUMM; i++ ))
 		do
 			DBNM=`"$SPATH"psql $OPT -t -c "SELECT d.datname FROM pg_catalog.pg_database d WHERE d.datname <> 'template1' AND d.datname <> 'template0';" | sed '/^$/d' | head -n $i | tail -n 1`
 			DBNM=`echo $DBNM`
-			echo "" >> ./pbg_ser$TODAY.log
-			echo "" >> ./pbg_ser$TODAY.log
-			echo "###########################################################################" >> ./pbg_ser$TODAY.log
-			echo "                                 $DBNM" >> ./pbg_ser$TODAY.log
-			echo "###########################################################################" >> ./pbg_ser$TODAY.log
+			echo "" >> ./pbg_ser${TODAY}.log
+			echo "" >> ./pbg_ser${TODAY}.log
+			echo "###########################################################################" >> ./pbg_ser${TODAY}.log
+			echo "                                 $DBNM" >> ./pbg_ser${TODAY}.log
+			echo "###########################################################################" >> ./pbg_ser${TODAY}.log
                         if [ "$WRE" == "trust" ]; then
 				ROPT=""
                         else
@@ -1090,7 +1110,7 @@ localhost:$PORT:$DBNM:$USER:$PWD
 EOFF
 				chmod 400 ~/.pgpass
 			fi
-			"$SPATH"psql $ROPT -d $DBNM -c '\i ./yaho.sql' >> ./pbg_ser$TODAY.log
+			"$SPATH"psql $ROPT -d $DBNM -c '\i ./yaho.sql' >> ./pbg_ser${TODAY}.log
                         if [ "$WRE" != "trust" ]; then
 				chmod 600 ~/.pgpass
 				sed -i '$d' ~/.pgpass
@@ -1104,8 +1124,8 @@ EOFF
 		chmod 400 ~/.pgpass
 		rm -rf ./pbg.sql
 	fi
-	echo "" >> ./pbg_ser$TODAY.log
-	echo "" >> ./pbg_ser$TODAY.log
+	echo "" >> ./pbg_ser${TODAY}.log
+	echo "" >> ./pbg_ser${TODAY}.log
 fi
 
 if [ "$VER" == "10" ] || [ "$VER" == "11" ]
@@ -1202,6 +1222,12 @@ if [ "$CH" == "9" ];then
 else
 	FAIL=1
 fi
+touch $LOG_DIR/pbg_err${TODAY}.log
+touch $LOG_DIR/pbg_slow${TODAY}.log
+touch $LOG_DIR/pbg_temp${TODAY}.log
+touch $LOG_DIR/pbg_lock${TODAY}.log
+touch ./pbg_lock_temp.sh
+echo true >> ./pbg_lock_temp.sh
 while [ "$FAIL" == "1" ]
 do
 	echo ""
@@ -1258,23 +1284,23 @@ W=`echo "$R 9"|awk '{printf "%.0f", $1 + $2 }'`
 Q=`echo "$W 2"|awk '{printf "%.0f", $1 + $2 }'`
 AN=0
 RN=0
-AFN=`find $LOG_DIR -name "$LOG_PRE*" | wc -l`
-echo "                                               # Shutdown record Report #" >> $LOG_DIR/pbg_sht$TODAY.log
-echo "--------------------┬--------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_sht$TODAY.log
-echo " Time of occurrence |                                              reason" >> $LOG_DIR/pbg_sht$TODAY.log
-echo "--------------------┴--------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_sht$TODAY.log
-echo "                                                # FATAL record Report #" >> $LOG_DIR/pbg_fatl$TODAY.log
-echo "------┬-------------------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_fatl$TODAY.log
-echo " count| Time of occurrence|                                       reason" >> $LOG_DIR/pbg_fatl$TODAY.log
-echo "------┴-------------------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_fatl$TODAY.log
-echo "                                                # PANIC record Report #" >> $LOG_DIR/pbg_panic$TODAY.log
-echo "------┬-------------------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_panic$TODAY.log
-echo " count| Time of occurrence|                                       reason" >> $LOG_DIR/pbg_panic$TODAY.log
-echo "------┴-------------------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_panic$TODAY.log
-echo "                                               # WARNING record Report #" >> $LOG_DIR/pbg_warn$TODAY.log
-echo "------┬-------------------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_warn$TODAY.log
-echo " count| Time of occurrence|                                       reason" >> $LOG_DIR/pbg_warn$TODAY.log
-echo "------┴-------------------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_warn$TODAY.log
+AFN=`find $LOG_DIR/* -name "${LOG_PRE}*" | wc -l`
+echo "                                               # Shutdown record Report #" >> $LOG_DIR/pbg_sht${TODAY}.log
+echo "--------------------┬--------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_sht${TODAY}.log
+echo " Time of occurrence |                                              reason" >> $LOG_DIR/pbg_sht${TODAY}.log
+echo "--------------------┴--------------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_sht${TODAY}.log
+echo "                                                # FATAL record Report #" >> $LOG_DIR/pbg_fatl${TODAY}.log
+echo "------┬-------------------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_fatl${TODAY}.log
+echo " count| Time of occurrence|                                       reason" >> $LOG_DIR/pbg_fatl${TODAY}.log
+echo "------┴-------------------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_fatl${TODAY}.log
+echo "                                                # PANIC record Report #" >> $LOG_DIR/pbg_panic${TODAY}.log
+echo "------┬-------------------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_panic${TODAY}.log
+echo " count| Time of occurrence|                                       reason" >> $LOG_DIR/pbg_panic${TODAY}.log
+echo "------┴-------------------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_panic${TODAY}.log
+echo "                                               # WARNING record Report #" >> $LOG_DIR/pbg_warn${TODAY}.log
+echo "------┬-------------------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_warn${TODAY}.log
+echo " count| Time of occurrence|                                       reason" >> $LOG_DIR/pbg_warn${TODAY}.log
+echo "------┴-------------------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_warn${TODAY}.log
 
 while [ ${test} $FILE -ot $LOG_DIR/pbgstart.txt ]
 do
@@ -1291,7 +1317,6 @@ do
 	if [ "$FILE" == "$FILEB" ]; then
 		FILE=$LOG_DIR/pbgend.txt
 	fi
-	#while [ ! ${test} -e $LOG_DIR/pbg_temp.file -a ! ${test} $FILE -ef $LOG_DIR/pbgend.txt ];
 	while [ ! ${test} -e $LOG_DIR/pbg_temp.file ];
 	do
 		if [ "$FILE" != "$LOG_DIR/pbgend.txt" ]; then
@@ -1308,143 +1333,183 @@ do
 	        printf 'Inspect '${FILEE}' LOG files......[/]('${PN}'%%)\r';
 		sleep 0.05
 	done &
-	cat $FILEB | grep ERROR: >> $LOG_DIR/pbg_err$TODAY.log
-	cat $FILEB | grep -A15 duration | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed '{N;s/\n.*LOG:.*statement:/ stateiment:/gi}'| sed '{N;s/\n.*query:/ query:/gi}'| sed '{N;s/\n.*statement:/ state :/gi}'| sed '{s// /gi}' | sed '{s/--/ /gi}' | sed ':a;N;$!ba;s/\n;/ /gi' | grep duration > $LOG_DIR/pbg_slow_temp$TODAY.log
-        SUN=`cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/duration:/ & /g'| awk '{ num=1; while (index($num,"duration")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-        DUN=`cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/duration:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-        TUN=`cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/duration:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+	cat $FILEB | grep ERROR: >> $LOG_DIR/pbg_err${TODAY}.log
+        SUN=`cat $FILEB | grep LOG: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while (index($num,"LOG:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+	if [ "$SUN" == "" ]; then
+		SUN=0
+	fi
+        RUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	cat $FILEB | grep -A15 duration: |sed 's/FATAL:/ & /gi'|sed 's/PANIC:/ & /gi'|sed 's/WARNING:/ & /gi'|sed 's/LOG:/ & /gi'|sed 's/DETAIL:/ & /gi'|sed 's/STATEMENT:/ & /gi'|sed 's/QUERY:/ & /gi'|sed 's/CONTEXT:/ & /gi'|sed '/^--/d'|sed '/^ --/d'| sed '/^\t$/d'| sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/"  | sed ':a;N;$!ba;s/\n;/ /gi'|awk {'if($'${SUN}'=="LOG:"){if($'${RUN}'=="statement:"){printf "bkbspark "$0} else{printf $0}} else{printf "bkbspark "$0;} print ""'}| sed -e 's/bkbspark.*statement:/bkbspark STATEMENT:/gi'| sed -e 's/bkbspark.*DETAIL:/bkbspark DETAIL:/gi'| sed -e 's/bkbspark.*QUERY:/bkbspark QUERY:/gi'| sed -e 's/bkbspark.*CONTEXT:/bkbspark CONTEXT:/gi'| sed ':a;N;$!ba;s/\nbkbspark//gi'| grep duration: > $LOG_DIR/pbg_slow_temp${TODAY}.log
+        SUN=`cat $LOG_DIR/pbg_slow_temp${TODAY}.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while (index($num,"duration")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        DUN=`cat $LOG_DIR/pbg_slow_temp${TODAY}.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        TUN=`cat $LOG_DIR/pbg_slow_temp${TODAY}.log | grep duration | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
         NSUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
         RUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-        cat $LOG_DIR/pbg_slow_temp$TODAY.log | grep duration | sort -k$NSUN,100 | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1000;} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow$TODAY.log
-	
-	cat $FILEB | grep -A15 "temporary file:" | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/"| sed "s/^ /;/" | sed '{N;s/\n.*query:/ query:/gi}'| sed '{N;s/\n.*statement:/ statement:/gi}' | sed '{N;s/\n.*context:/ state :/gi}'| sed '{s// /gi}' | sed '{s/--/ /gi}' | sed ':a;N;$!ba;s/\n;/ /gi' | grep "temporary file:" > $LOG_DIR/pbg_temp_temp$TODAY.log
-        SUN=`cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1 ;while ($num!="size") num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-        DUN=`cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-        TUN=`cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        cat $LOG_DIR/pbg_slow_temp${TODAY}.log | grep duration: | sort | uniq -i | sort -k$NSUN,100 | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.3f", $'${RUN}'/1000;} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_slow${TODAY}.log
+        SUN=`cat $FILEB | grep LOG: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while (index($num,"LOG:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+	if [ "$SUN" == "" ]; then
+		SUN=0
+	fi
+        RUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	cat $FILEB | grep -A15 "temporary file:" |sed 's/FATAL:/ & /gi'|sed 's/PANIC:/ & /gi'|sed 's/WARNING:/ & /gi'|sed 's/LOG:/ & /gi'|sed 's/DETAIL:/ & /gi'|sed 's/STATEMENT:/ & /gi'|sed 's/QUERY:/ & /gi'|sed 's/CONTEXT:/ & /gi'|sed '/^--/d'|sed '/^ --/d'| sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/"| sed "s/^ /;/" | sed ':a;N;$!ba;s/\n;/ /gi'|awk {'if($'${SUN}'=="LOG:"){if($'${RUN}'=="statement:"){printf "bkbspark "$0} else{printf $0}} else{printf "bkbspark "$0;} print ""'}| sed -e 's/bkbspark.*statement:/bkbspark STATEMENT:/gi'| sed -e 's/bkbspark.*DETAIL:/bkbspark DETAIL:/gi'| sed -e 's/bkbspark.*QUERY:/bkbspark QUERY:/gi'| sed -e 's/bkbspark.*CONTEXT:/bkbspark CONTEXT:/gi'| sed ':a;N;$!ba;s/\nbkbspark//gi'| grep "temporary file:" > $LOG_DIR/pbg_temp_temp${TODAY}.log
+        SUN=`cat $LOG_DIR/pbg_temp_temp${TODAY}.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1 ;while ($num!="size") num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        DUN=`cat $LOG_DIR/pbg_temp_temp${TODAY}.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        TUN=`cat $LOG_DIR/pbg_temp_temp${TODAY}.log | grep ", size" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/", size"/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
         NSUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
         RUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-        cat $LOG_DIR/pbg_temp_temp$TODAY.log | grep "temporary file:" | sort -k$NSUN,100 | awk {'num='${RUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1048576;} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_temp$TODAY.log
+        cat $LOG_DIR/pbg_temp_temp${TODAY}.log | grep "temporary file:" | sort -k$NSUN,100 | awk {'num='${RUN}'; for(i=num;i<=NF;i++){ if(i==num){printf $'${DUN}'" "$'${TUN}'" "; printf "%.0f", $'${RUN}'/1048576;} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_temp${TODAY}.log
 
-#	cat $FILEB | grep temporary >> $LOG_DIR/pbg_temp$TODAY.log
-#	cat $FILEB | grep lock: | awk '{if (($'${W}'!="")&&($'${Q}'==""))print "cat '${FILEB}' \| sed -e \'\''s\;^.*.QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*..QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*...QUERY:\;\;i\'\''\| sed -e \'\''s\;^.*.CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*..CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*...CONTEXT:\;\;i\'\''\| sed -e \'\''s\;^.*.statement:\;\;i\'\''\| sed -e \'\''s\;^.*..statement:\;\;i\'\''\| sed -e \'\''s\;^.*...statement:\;\;i\'\''\| sed \'\''s/^M//gi\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\\t\/\ \/g\'\''\|sed \'\'':a\;N\;\$\!ba\;s\/\\n\ \/\ \/g\'\''| grep \"" $0 "\""}' 2>/dev/null 1> $LOG_DIR/pbg.sh 
-        SUN=`cat $FILEB | grep "lock:" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/"lock:"/ & /g'| awk '{ num=1 ;while ($num!="queue:") num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+        SUN=`cat $FILEB | grep "lock:" | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/"DETAIL:"/ & /g'| awk '{ num=1 ;while ($num!="queue:") num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
         NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
         MSUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
-	cat $FILEB* | grep lock: | awk {'if(""==$'${MSUN}'&&""!=$'${NSUN}'){print "cat '${FILEB}'* | grep -B1 -A15 \""$0"\""}'} >> pbg_lock_temp.sh
-#	rm -rf $LOG_DIR/pbg.sh
+        ISUN=`echo "$SUN 4"|awk '{printf "%.0f", $1 + $2 }'`
+        PSUN=`echo "$SUN 5"|awk '{printf "%.0f", $1 + $2 }'`
+        QSUN=`echo "$SUN 6"|awk '{printf "%.0f", $1 + $2 }'`
+	cat $FILEB* | grep lock: | awk {'if(""!=$'${MSUN}'&&(""==$'${ISUN}'||""==$'${PSUN}'||""==$'${QSUN}')){print "cat '${FILEB}'* | grep -B1 -A15 \""$0"\""}'} >> pbg_lock_temp.sh
 	SUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while (index($num,"LOG")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	TUN=`cat $FILEB | grep utdow | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/LOG:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	MSUN=""
 	if [ "$SUN" != "" ]; then
 		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep utdow | sort -k$NSUN,21 | sort -r | awk {'num='${SUN}'; for(i=num;i<=NF;i++){ if(i==num){printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_sht$TODAY.log
+	cat $FILEB | grep utdow |sed 's/LOG:/ & /g'| sort -k$NSUN,21 | sort -r | awk {'num='${SUN}'; for(i=num;i<=NF;i++){ if(i==num){printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_sht${TODAY}.log
 
 	SUN=`cat $FILEB | grep FATAL | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/FATAL:/ & /g'| awk '{ num=1; while (index($num,"FATAL")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep FATAL | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/FATAL:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	TUN=`cat $FILEB | grep FATAL | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/FATAL:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	MSUN=""
 	if [ "$SUN" != "" ]; then
 		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep FATAL | sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_fatl$TODAY.log
+	cat $FILEB | grep FATAL |sed 's/FATAL:/ & /g'| sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_fatl${TODAY}.log
 
 	SUN=`cat $FILEB | grep PANIC | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/PANIC:/ & /g'| awk '{ num=1; while (index($num,"PANIC")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep PANIC | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/PANIC:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	TUN=`cat $FILEB | grep PANIC | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/PANIC:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	MSUN=""
 	if [ "$SUN" != "" ]; then
 		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep PANIC | sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_panic$TODAY.log
+	cat $FILEB | grep PANIC |sed 's/PANIC:/ & /g'| sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >>  $LOG_DIR/pbg_panic${TODAY}.log
 
 	SUN=`cat $FILEB | grep WARNING | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/WARNING:/ & /g'| awk '{ num=1; while (index($num,"WARNING")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	DUN=`cat $FILEB | grep WARNING | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/WARNING:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	TUN=`cat $FILEB | grep WARNING | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/WARNING:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num + 1 }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 	NSUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+	MSUN=""
 	if [ "$SUN" != "" ]; then
 		MSUN=`echo "-f $SUN"`
 	fi
-	cat $FILEB | grep WARNING | sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_warn$TODAY.log
+	cat $FILEB | grep WARNING |sed 's/WARNING:/ & /g'| sort -k$NSUN,21| uniq $MSUN -d -c | sort -r | awk {'num='${NSUN}'; for(i=num;i<=NF;i++){ if(i==num){printf ("%-6s",$1);printf" "$'${DUN}'" "$'${TUN}';} printf " "$i };printf "\n"'} 2> /dev/null >> $LOG_DIR/pbg_warn${TODAY}.log
 	touch $LOG_DIR/pbg_temp.file
 	sleep 0.3
 	rm -rf $LOG_DIR/pbg_temp.file
 done
 rm -rf $LOG_DIR/pbgstart.txt
 rm -rf $LOG_DIR/pbgend.txt
-echo "                                      # Syntax ERROR REPORT #">> $LOG_DIR/pbg_err2$TODAY.log
-echo "-------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_err2$TODAY.log
-echo " count |                                     ERROR query" >> $LOG_DIR/pbg_err2$TODAY.log
-echo "-------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_err2$TODAY.log
-cat $LOG_DIR/pbg_err$TODAY.log | cut -d\  -f$E- | sort | uniq -c | sort -nr | awk '{if ($1>='${DD}')print}'>> $LOG_DIR/pbg_err2$TODAY.log
-#cat $LOG_DIR/pbg_err$TODAY.log | cut -d\  -f$E- | sort | uniq -c | sort -nr >> $LOG_DIR/pbg_err2$TODAY.log
-rm -rf $LOG_DIR/pbg_err$TODAY.log
-mv $LOG_DIR/pbg_err2$TODAY.log $LOG_DIR/pbg_err$TODAY.log
-cat $LOG_DIR/pbg_slow$TODAY.log | sort | uniq -i | sort -k5,100| uniq -f 3 -c | sort -nr | awk {'num=5; for(i=num;i<=NF;i++){ if(i==num){printf ("%7s",$1"  ");printf $2" "$3"  "; printf ("%5s",$4"s");} printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_slow2$TODAY.log
-echo "                                      # Slow QUERY REPORT #"> $LOG_DIR/pbg_slow$TODAY.log
-echo "-------┬-------------------┬------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_slow$TODAY.log
-echo " count | Time of occurrence| time |                             SLOW query" >> $LOG_DIR/pbg_slow$TODAY.log
-echo "-------┴-------------------┴------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_slow$TODAY.log
-cat $LOG_DIR/pbg_slow2$TODAY.log | awk '{if ($1>='${DD}')print}' >> $LOG_DIR/pbg_slow$TODAY.log
-rm -rf $LOG_DIR/pbg_slow2$TODAY.log
-rm -rf $LOG_DIR/pbg_slow_temp$TODAY.log
-#cat $LOG_DIR/pbg_slow$TODAY.log | cut -d\  -f$T,1,2,$T- | sort -k5,21 -k3nr -r| uniq -c -f 4 |sort -nr| sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g' | awk '{if ($1>='${DD}')print}'>> $LOG_DIR/pbg_slow2$TODAY.log
-#cat $LOG_DIR/pbg_slow$TODAY.log | cut -d\  -f$T,1,2,$T- | sort -k5,21 -k3nr -r| uniq -c -f 4 |sort -nr| sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g' >> $LOG_DIR/pbg_slow2$TODAY.log
-cat $LOG_DIR/pbg_temp$TODAY.log | awk {'if(""==$5){print }'} >> $LOG_DIR/pbg_temp_n$TODAY.log
-cat $LOG_DIR/pbg_temp$TODAY.log | awk {'if(""!=$5){print }'} >> $LOG_DIR/pbg_temp_p$TODAY.log
-cat $LOG_DIR/pbg_temp_n$TODAY.log | sort | uniq -i -c | sort -nr | awk {'printf ("%7s",$1"  ");printf $2" "$3"  "; printf ("%5s",$4"MB");printf "\n"'}>> $LOG_DIR/pbg_temp2$TODAY.log
-cat $LOG_DIR/pbg_temp_p$TODAY.log | sort | uniq -i | sort -k5,100 | uniq -f 4 -c | sort -nr | awk {'num=6; for(i=num;i<=NF;i++){ if(i==num){printf ("%7s",$1" ");printf $2" "$3"   "; printf ("%5s",$4"MB"); } printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_temp2$TODAY.log
-echo "                                      # TEMP QUERY REPORT #"> $LOG_DIR/pbg_temp$TODAY.log
-echo "-------┬-------------------┬------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_temp$TODAY.log
-echo " count | Time of occurrence| SIZE |                             TEMP query" >> $LOG_DIR/pbg_temp$TODAY.log
-echo "-------┴-------------------┴------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_temp$TODAY.log
-#cat $LOG_DIR/pbg_temp2$TODAY.log | awk '{if ($1>='${DD}')print}' >> $LOG_DIR/pbg_temp$TODAY.log
-cat $LOG_DIR/pbg_temp2$TODAY.log | sort -k2,3 >> $LOG_DIR/pbg_temp$TODAY.log
-rm -rf $LOG_DIR/pbg_temp2$TODAY.log
-rm -rf $LOG_DIR/pbg_temp_temp$TODAY.log
-rm -rf $LOG_DIR/pbg_temp_n$TODAY.log
-rm -rf $LOG_DIR/pbg_temp_p$TODAY.log
-#echo "                                          # LOCK REPORT #">> $LOG_DIR/pbg_lock$TODAY.log
-#echo "-------------------┬--------------------------------------------------------------------------------" >> $LOG_DIR/pbg_lock$TODAY.log
-#echo " Time of occurrence|                              Wait queue & Query" >> $LOG_DIR/pbg_lock$TODAY.log
-#echo "-------------------┴--------------------------------------------------------------------------------" >> $LOG_DIR/pbg_lock$TODAY.log
-bash pbg_lock_temp.sh >> $LOG_DIR/pbg_lock_temp$TODAY.log
+echo "                                      # Syntax ERROR REPORT #">> $LOG_DIR/pbg_err2${TODAY}.log
+echo "-------┬--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_err2${TODAY}.log
+echo " count |                                     ERROR query" >> $LOG_DIR/pbg_err2${TODAY}.log
+echo "-------┴--------------------------------------------------------------------------------------------" >> $LOG_DIR/pbg_err2${TODAY}.log
+cat $LOG_DIR/pbg_err${TODAY}.log | cut -d\  -f$E- | sort | uniq -c | sort -nr | awk '{if ($1>='${DD}')print}'>> $LOG_DIR/pbg_err2${TODAY}.log
+rm -rf $LOG_DIR/pbg_err${TODAY}.log
+mv $LOG_DIR/pbg_err2${TODAY}.log $LOG_DIR/pbg_err${TODAY}.log
+cat $LOG_DIR/pbg_slow${TODAY}.log | sort -k 4,100 | uniq -f 3 -i -c | sort -nr | awk {'num=5; for(i=num;i<=NF;i++){ if(i==num){printf ("%7s",$1);printf "  "$2" "$3"  "; printf ("%5s",$4"s");} printf " "$i };printf "\n"'}>> $LOG_DIR/pbg_slow2${TODAY}.log
+echo "                                      # Slow QUERY REPORT #"> $LOG_DIR/pbg_slow${TODAY}.log
+echo "-------┬-------------------┬------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_slow${TODAY}.log
+echo " count | Time of occurrence |  time |                             SLOW query" >> $LOG_DIR/pbg_slow${TODAY}.log
+echo "-------┴-------------------┴------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_slow${TODAY}.log
+#cat $LOG_DIR/pbg_slow2${TODAY}.log  >> $LOG_DIR/pbg_slow${TODAY}.log
+cat $LOG_DIR/pbg_slow2${TODAY}.log | awk '{if ($1>='${DD}')print}' >> $LOG_DIR/pbg_slow${TODAY}.log
+rm -rf $LOG_DIR/pbg_slow_temp${TODAY}.log
+rm -rf $LOG_DIR/pbg_slow2${TODAY}.log
+cat $LOG_DIR/pbg_temp${TODAY}.log | awk {'if(""==$5){print }'} >> $LOG_DIR/pbg_temp_n${TODAY}.log
+cat $LOG_DIR/pbg_temp${TODAY}.log | awk {'if(""!=$5){print }'} >> $LOG_DIR/pbg_temp_p${TODAY}.log
+cat $LOG_DIR/pbg_temp_n${TODAY}.log | sort | uniq -i -c | sort -nr | awk {'printf ("%7s",$1);printf "  "$2" "$3"  "; printf ("%5s",$4"MB");print ""'}>> $LOG_DIR/pbg_temp2${TODAY}.log
+cat $LOG_DIR/pbg_temp_p${TODAY}.log | sort | uniq -i | sort -k5,100 | uniq -f 4 -c | sort -nr | awk {'num=6; for(i=num;i<=NF;i++){ if(i==num){printf ("%7s",$1);printf "  "$2" "$3"   "; printf ("%5s",$4"MB"); } printf " "$i };print ""'}>> $LOG_DIR/pbg_temp2${TODAY}.log
+echo "                                      # TEMP QUERY REPORT #"> $LOG_DIR/pbg_temp${TODAY}.log
+echo "-------┬-------------------┬------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_temp${TODAY}.log
+echo " count | Time of occurrence |  SIZE |                             TEMP query" >> $LOG_DIR/pbg_temp${TODAY}.log
+echo "-------┴-------------------┴------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_temp${TODAY}.log
+cat $LOG_DIR/pbg_temp2${TODAY}.log | sort -k2,3 >> $LOG_DIR/pbg_temp${TODAY}.log
+#cat $LOG_DIR/pbg_temp2${TODAY}.log | sort -k2,3 | awk '{if ($1>='${DD}')print}'>> $LOG_DIR/pbg_temp${TODAY}.log
+rm -rf $LOG_DIR/pbg_temp2${TODAY}.log
+rm -rf $LOG_DIR/pbg_temp_temp${TODAY}.log
+rm -rf $LOG_DIR/pbg_temp_n${TODAY}.log
+rm -rf $LOG_DIR/pbg_temp_p${TODAY}.log
+sed -i 's/\[/\\[/g' pbg_lock_temp.sh
+sed -i 's/\]/\\]/g' pbg_lock_temp.sh
+bash pbg_lock_temp.sh >> $LOG_DIR/pbg_lock_temp${TODAY}.log
 rm -rf pbg_lock_temp.sh
-#cat $LOG_DIR/pbg_lock$TODAY.log | sed 's/;/ /g'| sed 's/ * statement: *//gi'  | sed 's/ *SELECT */ SELECT /gi' | sed 's/\*\/ */\*\/ /g'| sed 's/ * AS */ AS /gi'  | sed 's/ * FROM */ FROM /gi'| sed 's/ * WHERE */ WHERE /gi' | sed 's/ * AND */ AND /gi'| sed 's/ * ORDER BY */ ORDER BY /gi'| sed 's/ * GROUP BY */ GROUP BY /gi'| sed 's/ *DELETE */ DELETE /gi'| sed 's/ *INSERT */ INSERT /gi'| sed 's/ *UPDATE */ UPDATE /gi'| sed 's/ *COPY */ COPY /gi'| sed 's/ *VACUUM */ VACUUM /gi'| sed 's/ *( */(/gi'| sed 's/ * ) */)/gi'| sed 's/ *, */,/gi'| sed 's/; */;/g'| sed 's/;\t*/;/g' | sed 's///gi'| sed 's/\*\/ */\*\/ /g'| sort -k12 >> $LOG_DIR/pbg_lock2$TODAY.log
-SUN=`cat $LOG_DIR/pbg_lock_temp$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while (index($num,"queue:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+SUN=`cat $LOG_DIR/pbg_lock_temp${TODAY}.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/DETAIL:/ & /g'| awk '{ num=1; while (index($num,"queue:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
 SUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
-HUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
-JUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
-#cat $LOG_DIR/pbg_lock_temp$TODAY.log | sed '{N;s/^.*waiting for //gi}'| sed '{N;s/Lock on.*\n/Lock /gi}'| awk {'if($'${SUN}'== "queue:"){num=2;if($'${HUN}'!= ""){if($'${JUN}'!= ""){for(i=num;i<=NF;i++){print " "$i;}}else{for(i=num;i<=NF;i++){print " "$i;} print " bkbspark "$1;}} else{for(i=num;i<=NF;i++){print " "$i;} print " bkbspark bkbspark "$1;}} else{for(i=num;i<=NF;i++){print " "$i;} print " "$1;}'} | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed '{N;s/\n.*query:/ query:/gi}'| sed '{N;s/\n.*context:/ context:/gi}' | sed '{N;s/\n.*statement:/ statement:/gi}'| sed '{s// /gi}' | sed '{s/--/ /gi}' | sed ':a;N;$!ba;s/\n;/ /gi'|grep lock:| sort -r | uniq -i -w 20  > $LOG_DIR/pbg_lock$TODAY.log
-echo "                                      # LOCK QUERY REPORT #"> $LOG_DIR/pbg_lock$TODAY.log
-echo "--------------------┬--------------------┬------------------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_lock$TODAY.log
-echo "        KIND        | Time of occurrence |       queue      |                              query" >> $LOG_DIR/pbg_lock$TODAY.log
-echo "--------------------┴--------------------┴------------------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_lock$TODAY.log
-cat $LOG_DIR/pbg_lock_temp$TODAY.log |grep -v "LOG:.*acquired"|sed '/--/d' | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed '{s/^M/ /gi}' | sed '{s/--/ /gi}' | sed '{s/^.*waiting for //gi}'| sed '{s/Lock on.*$/Lock bkbspark/g}'| sed ':a;N;$!ba;s/\n;/ /gi'|sed -e '/bkbspark$/N;s/bkbspark\n/bkbspark /g' |  awk {'if($'${SUN}'== "queue:"){num=3;if($'${HUN}'!= ""){if($'${JUN}'!= ""){for(i=num;i<=NF;i++){printf $i" ";} print "";}else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark "$1; print "";}} else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark bkbspark "$1;print "";}} else{print $0;}'}|sed -e '/^.*bkbspark/N;s/\n.*query:/ query:/gi'| sed -e '/^.*bkbspark/N;s/\n.*context:/ context:/gi'| sed -e '/^.*bkbspark/N;s/\n.*statement:/ statement:/gi' | grep lock: > $LOG_DIR/pbg_lock_temp2$TODAY.log
-SUN=`cat $LOG_DIR/pbg_lock_temp2$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while (index($num,"queue:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-DUN=`cat $LOG_DIR/pbg_lock_temp2$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
-TUN=`cat $LOG_DIR/pbg_lock_temp2$TODAY.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+IUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
+HUN=`echo "$SUN 4"|awk '{printf "%.0f", $1 + $2 }'`
+JUN=`echo "$SUN 5"|awk '{printf "%.0f", $1 + $2 }'`
+KUN=`echo "$SUN 6"|awk '{printf "%.0f", $1 + $2 }'`
+echo "                                            # LOCK QUERY REPORT #"> $LOG_DIR/pbg_lock${TODAY}.log
+echo "------------------------------------------------------------------------------------------------------------------------------------------">> $LOG_DIR/pbg_lock${TODAY}.log
+echo "┌----┬----┬----┬----┬----┬----┬----┬----┬----┐" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|     |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  | " >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤  1) Access Share : select" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  1  |     |     |     |     |     |     |     |  X  |   2) Row Share : select for update, select for share" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤  3) Row Exclusive : DML" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  2  |     |     |     |     |     |     |  X  |  X  |   4) Share Update Exclusive : Vacuum, Analyze, Create index concurrently" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤  5) Share : Create index" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  3  |     |     |     |     |  X  |  X  |  X  |  X  |   6) Share Row Exclusive : session level lock" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤  7) Exclusive : Parallel Process" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  4  |     |     |     |  X  |  X  |  X  |  X  |  X  |   8) Access Exclusive : Alter, Drop, Truncate Table, Reindex, Cluster, Vacuum Full" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  5  |     |     |  X  |  X  |     |  X  |  X  |  X  |" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  6  |     |     |  X  |  X  |  X  |  X  |  X  |  X  |" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  7  |     |  X  |  X  |  X  |  X  |  X  |  X  |  X  |" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "├----┼----┼----┼----┼----┼----┼----┼----┼----┤" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "|  8  |  X  |  X  |  X  |  X  |  X  |  X  |  X  |  X  |" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "└----┴----┴----┴----┴----┴----┴----┴----┴----┘" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "--------------------┬--------------------┬------------------------------┬--------------------------------------------------------------" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "        KIND        |  Time of occurrence |               queue           |                              query" >> $LOG_DIR/pbg_lock${TODAY}.log
+echo "--------------------┴--------------------┴------------------------------┴--------------------------------------------------------------" >> $LOG_DIR/pbg_lock${TODAY}.log
+LUN=`cat $LOG_DIR/pbg_lock_temp${TODAY}.log | grep DETAIL: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/DETAIL:/ & /g'| awk '{ num=1; while (index($num,"DETAIL:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+if [ "$LUN" == "" ]; then
+	LUN=0
+fi
+GUN=`echo "$LUN 13"|awk '{printf "%.0f", $1 + $2 }'`
+OUN=`echo "$LUN 1"|awk '{printf "%.0f", $1 + $2 }'`
+cat $LOG_DIR/pbg_lock_temp${TODAY}.log |sed 's/LOG:/ & /g'|sed 's/FATAL:/ & /g'|sed 's/WARING:/ & /g'|sed 's/PANIC:/ & /g'|sed 's/DETAIL:/ & /g'|sed 's/STATEMENT:/ & /g'|sed 's/QUERY:/ & /g'|sed 's/CONTEXT:/ & /g'|sed '/^--/d'|sed '/^ --/d' | sed '/^\t$/d' | sed '/^$/d' | sed "s/^\t/;/" | sed "s/^ /;/" | sed ':a;N;$!ba;s/\n;/ /gi' |sed 's/"LOG:.*acquired.*Lock"//g'| sed '{s/^.*waiting for //gi}'| sed '{s/Lock on.*$/Lock bkbspark/g}'|sed -e '/bkbspark$/N;s/bkbspark\n/bkbspark /g' | awk {'if($'${SUN}'=="queue:" && $'${IUN}'!="" && $'${KUN}'==""){num=3;if($'${HUN}'!= ""){if($'${JUN}'!= ""){for(i=num;i<=NF;i++){printf $i" ";} printf $1; print "";}else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark "$1; print "";}} else{for(i=num;i<=NF;i++){printf $i" ";} printf "bkbspark bkbspark "$1;print "";}} else{print $0;}'}|awk {'if($'${LUN}'=="DETAIL:"||$'${LUN}'=="LOG:"||$'${LUN}'=="FATAL:"||$'${LUN}'=="PANIC:"||$'${LUN}'=="WARNING:"||index($1,"Lock")!=0){printf $0} else{printf "bkbspark "$0} print ""'}| sed -e 's/bkbspark.*statement:/bkbspark STATEMENT:/gi'| sed -e 's/bkbspark.*QUERY:/bkbspark QUERY:/gi'| sed -e 's/bkbspark.*CONTEXT:/bkbspark CONTEXT:/gi'| sed ':a;N;$!ba;s/\nbkbspark//gi' | awk {'if(index($1,"Lock")==0 && $'${LUN}'=="DETAIL:" && index($'${GUN}',"Lock")!=0){for(i=1;i<=NF;i++){printf $i" ";} print ""}'}> $LOG_DIR/pbg_lock_temp2${TODAY}.log
+SUN=`cat $LOG_DIR/pbg_lock_temp2${TODAY}.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while (index($num,"queue:")==0) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+DUN=`cat $LOG_DIR/pbg_lock_temp2${TODAY}.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+TUN=`cat $LOG_DIR/pbg_lock_temp2${TODAY}.log | grep lock: | sed 's/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ & /g'| sed 's/[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ & /g'|sed 's/lock:/ & /g'| awk '{ num=1; while ($num !~ /[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) num=num+1; print num }'| sort | uniq -c | sort -r | head -n 1 | awk {'print $2'}`
+if [ "$SUN" == "" ]; then
+	SUN=0
+fi
 EUN=`echo "$SUN 1"|awk '{printf "%.0f", $1 + $2 }'`
-RUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
+QUN=`echo "$SUN 2"|awk '{printf "%.0f", $1 + $2 }'`
 WUN=`echo "$SUN 3"|awk '{printf "%.0f", $1 + $2 }'`
 HUN=`echo "$SUN 4"|awk '{printf "%.0f", $1 + $2 }'`
 JUN=`echo "$SUN 5"|awk '{printf "%.0f", $1 + $2 }'`
-sed -i "s/bkbspark/bkbsp/g" $LOG_DIR/pbg_lock_temp2$TODAY.log
-cat $LOG_DIR/pbg_lock_temp2$TODAY.log | sort | uniq -i | sort -k$EUN,$WUN | awk {'printf ("%-21s",$'${HUN}');printf " "$'${DUN}'" "$'${TUN}'" "; printf ("%-6s",$'${EUN}');printf ("%-6s",$'${RUN}');printf ("%-6s",$'${WUN}'); num='${JUN}' ;printf " ";for(i=num;i<=NF;i++){printf $i" ";}print "";'} | sed 's/bkbsp/     /g' >> $LOG_DIR/pbg_lock$TODAY.log
-
-#rm -rf $LOG_DIR/pbg_lock$TODAY.log
-#mv $LOG_DIR/pbg_lock2$TODAY.log $LOG_DIR/pbg_lock$TODAY.log
-BKN=4
+RUN=`echo "$SUN 6"|awk '{printf "%.0f", $1 + $2 }'`
+IUN=`echo "$SUN 7"|awk '{printf "%.0f", $1 + $2 }'`
+sed -i "s/bkbspark/bkbsp/g" $LOG_DIR/pbg_lock_temp2${TODAY}.log
+cat $LOG_DIR/pbg_lock_temp2${TODAY}.log |awk {'if (index($'${SUN}',"queue:")!=0){printf $0; print""} else{print ""}'}|sed '/^$/d' | sort | uniq -i | sort -k$EUN,$JUN | awk {'printf ("%-21s",$'${RUN}');printf " "$'${DUN}'" "$'${TUN}'"   "; printf ("%-6s",$'${EUN}');printf ("%-6s",$'${QUN}');printf ("%-6s",$'${WUN}');printf ("%-6s",$'${HUN}');printf ("%-6s",$'${JUN}');printf " "; num='${IUN}' ;printf " ";for(i=num;i<=NF;i++){printf $i" ";}print "";'} | sed 's/bkbsp/     /g'|awk {'if($5!=""){printf $0;} print ""'}|sed '/^$/d' >> $LOG_DIR/pbg_lock${TODAY}.log
+rm -rf $LOG_DIR/pbg_lock_temp2${TODAY}.log
+rm -rf $LOG_DIR/pbg_lock_temp${TODAY}.log
+BKN=25
 NQ=START
 while [ "$NQ" != "" ];
 do
 	BQ=$NQ
 	BKN=`echo "$BKN 1"|awk '{printf "%.0f", $1 + $2 }'`
-	NQ=`cat $LOG_DIR/pbg_lock$TODAY.log | sed -n ''${BKN}'p' |awk {'print $4'}| sed -e 's/\.$//'| sed -e 's/,$//'`
+	NQ=`cat $LOG_DIR/pbg_lock${TODAY}.log | sed -n ''${BKN}'p' |awk {'print $4'}| sed -e 's/\.$//'| sed -e 's/,$//'`
 	if [ "$BQ" != "START" ]; then
 		if [ "$BQ" != "$NQ" ]; then
-			sed -i -e ''${BKN}' i\----------------------------------------------------------------------------------------------------' $LOG_DIR/pbg_lock$TODAY.log
+			sed -i -e ''${BKN}' i\------------------------------------------------------------------------------------------------------------------------------------------' $LOG_DIR/pbg_lock${TODAY}.log
 			BKN=`echo "$BKN 1"|awk '{printf "%.0f", $1 + $2 }'`
 		fi
 	fi
@@ -1455,56 +1520,56 @@ echo ""
 echo "-------------------------------------------------------------------"
 echo ""
 echo "Inspect is FINISH. Please check RESULT, blow files."
-echo "pbg_err$TODAY.log  : Reports the occurrence of Syntax ERR"
-echo "pbg_slow$TODAY.log : Reports the frequency of the SLOW QUERY and the longest time."
-echo "pbg_temp$TODAY.log : Reports the usage history of TEMP FILE."
-echo "pbg_lock$TODAY.log : Reports the occurrence of LOCK."
-echo "pbg_sht$TODAY.log : Reports the occurrence of SHUTDOWN"
-echo "pbg_warn$TODAY.log : Reports the occurrence of WARNING."
-echo "pbg_panic$TODAY.log : Reports the occurrence of PANIC."
-echo "pbg_fatl$TODAY.log : Reports the occurrence of FATAL."
-echo "pbg_para$TODAY.log : Reports whether the parameter value set in the current database is the optimal value."
+echo "pbg_err${TODAY}.log  : Reports the occurrence of Syntax ERR"
+echo "pbg_slow${TODAY}.log : Reports the frequency of the SLOW QUERY and the longest time."
+echo "pbg_temp${TODAY}.log : Reports the usage history of TEMP FILE."
+echo "pbg_lock${TODAY}.log : Reports the occurrence of LOCK."
+echo "pbg_sht${TODAY}.log : Reports the occurrence of SHUTDOWN"
+echo "pbg_warn${TODAY}.log : Reports the occurrence of WARNING."
+echo "pbg_panic${TODAY}.log : Reports the occurrence of PANIC."
+echo "pbg_fatl${TODAY}.log : Reports the occurrence of FATAL."
+echo "pbg_para${TODAY}.log : Reports whether the parameter value set in the current database is the optimal value."
 echo ""
 echo "-------------------------------------------------------------------"
-mv $LOG_DIR/pbg_err$TODAY.log ./ 
-mv $LOG_DIR/pbg_slow$TODAY.log ./ 
-mv $LOG_DIR/pbg_temp$TODAY.log ./ 
-mv $LOG_DIR/pbg_lock$TODAY.log ./ 
-mv $LOG_DIR/pbg_sht$TODAY.log ./ 
-mv $LOG_DIR/pbg_fatl$TODAY.log ./ 
-mv $LOG_DIR/pbg_panic$TODAY.log ./ 
-mv $LOG_DIR/pbg_warn$TODAY.log ./ 
-cat ./pbg_err$TODAY.log >> ./pbg_ser$TODAY.log 
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-cat ./pbg_slow$TODAY.log >> ./pbg_ser$TODAY.log 
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-cat ./pbg_temp$TODAY.log >> ./pbg_ser$TODAY.log 
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-cat ./pbg_lock$TODAY.log >> ./pbg_ser$TODAY.log 
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-cat ./pbg_sht$TODAY.log >> ./pbg_ser$TODAY.log 
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-cat ./pbg_fatl$TODAY.log >> ./pbg_ser$TODAY.log 
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-cat ./pbg_panic$TODAY.log >> ./pbg_ser$TODAY.log 
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-cat ./pbg_warn$TODAY.log >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
-echo "" >> ./pbg_ser$TODAY.log
+mv $LOG_DIR/pbg_err${TODAY}.log ./ 
+mv $LOG_DIR/pbg_slow${TODAY}.log ./ 
+mv $LOG_DIR/pbg_temp${TODAY}.log ./ 
+mv $LOG_DIR/pbg_lock${TODAY}.log ./ 
+mv $LOG_DIR/pbg_sht${TODAY}.log ./ 
+mv $LOG_DIR/pbg_fatl${TODAY}.log ./ 
+mv $LOG_DIR/pbg_panic${TODAY}.log ./ 
+mv $LOG_DIR/pbg_warn${TODAY}.log ./ 
+cat ./pbg_err${TODAY}.log >> ./pbg_ser${TODAY}.log 
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+cat ./pbg_slow${TODAY}.log >> ./pbg_ser${TODAY}.log 
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+cat ./pbg_temp${TODAY}.log >> ./pbg_ser${TODAY}.log 
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+cat ./pbg_lock${TODAY}.log >> ./pbg_ser${TODAY}.log 
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+cat ./pbg_sht${TODAY}.log >> ./pbg_ser${TODAY}.log 
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+cat ./pbg_fatl${TODAY}.log >> ./pbg_ser${TODAY}.log 
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+cat ./pbg_panic${TODAY}.log >> ./pbg_ser${TODAY}.log 
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+cat ./pbg_warn${TODAY}.log >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
+echo "" >> ./pbg_ser${TODAY}.log
 rm -rf ./pbg_YN.file
 exit 0
