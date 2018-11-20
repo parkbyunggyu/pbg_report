@@ -446,7 +446,8 @@ EOFF
 		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
 	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
 		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
-		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"wa")==0) num=num+1; print num }'`
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
 		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser${TODAY}.log
 		shared_buffers=`"$SPATH"psql $OPT -t -c "show shared_buffers"`
@@ -490,7 +491,8 @@ EOFF
 		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
 	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
 		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
-		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"wa")==0) num=num+1; print num }'`
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
 		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser${TODAY}.log
 		archive_command=`cat $DATA_DIR/postgresql.auto.conf | grep -v "#" | grep archive_command | tail -n 1`
