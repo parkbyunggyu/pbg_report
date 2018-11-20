@@ -448,6 +448,13 @@ EOFF
 		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
 		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
 		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
+                if [ 1 -eq `echo "5 $LDA"|awk '{ if($2>$1) print 1; else print 0; }'` ]; then
+                        "You need application query tuning. This is because the load average is larger than 5.0" >> ./pbg_ser${TODAY}.log
+                fi
+                if [ 1 -eq `echo "15 $CPUIO"|awk '{ if($2>$1) print 1; else print 0; }'` ]; then
+                        "You need to suspect DISK I/O performance, not database performance." >> ./pbg_ser${TODAY}.log
+                        "This is because the DISK I/O is larger than 15%" >> ./pbg_ser${TODAY}.log
+		fi
 		echo "" >> ./pbg_ser${TODAY}.log
 		shared_buffers=`"$SPATH"psql $OPT -t -c "show shared_buffers"`
 		work_mem=`"$SPATH"psql $OPT -t -c "show work_mem"`
@@ -492,6 +499,13 @@ EOFF
 		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
 		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
 		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
+                if [ 1 -eq `echo "5 $LDA"|awk '{ if($2>$1) print 1; else print 0; }'` ]; then
+                        "You need application query tuning. This is because the load average is larger than 5.0" >> ./pbg_ser${TODAY}.log
+                fi
+                if [ 1 -eq `echo "15 $CPUIO"|awk '{ if($2>$1) print 1; else print 0; }'` ]; then
+                        "You need to suspect DISK I/O performance, not database performance." >> ./pbg_ser${TODAY}.log
+                        "This is because the DISK I/O is larger than 15%" >> ./pbg_ser${TODAY}.log
+                fi
 		echo "" >> ./pbg_ser${TODAY}.log
 		archive_command=`cat $DATA_DIR/postgresql.auto.conf | grep -v "#" | grep archive_command | tail -n 1`
 		ARCH_DIR=`echo ${archive_command#*cp %p}`
