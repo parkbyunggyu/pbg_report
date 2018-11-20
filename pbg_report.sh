@@ -446,8 +446,7 @@ EOFF
 		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
 	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
 		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
-		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"wa")==0) num=num+1; print num }'`
-		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
 		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser${TODAY}.log
 		shared_buffers=`"$SPATH"psql $OPT -t -c "show shared_buffers"`
@@ -491,8 +490,7 @@ EOFF
 		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"load")==0) num=num+1; print num }'`
 	        LDA=`top -b -d 1 -u $OUSER | head -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/^  //g'| sed 's/load average://'|sed 's/ //'` 
 		echo "load average : ""$LDA">> ./pbg_ser$TODAY.log
-		UU=`top -d 1 | head -n 1 | awk -F ',' '{ num=1; while (index($num,"wa")==0) num=num+1; print num }'`
-		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $'${UU}''} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
+		CPUIO=`top -b -d 1 -u $OUSER | head -n 3 | tail -n 1 | awk -F ',' {'print $5'} | sed 's/wa//'|sed 's/%//'|sed 's/ //'`
 		echo "CPU utilization rate for Disk I/O :""$CPUIO""%" >> ./pbg_ser$TODAY.log
 		echo "" >> ./pbg_ser${TODAY}.log
 		archive_command=`cat $DATA_DIR/postgresql.auto.conf | grep -v "#" | grep archive_command | tail -n 1`
@@ -618,11 +616,11 @@ EOFF
 		fi
 	fi	
 	if [ "$PID" != "temppid" ]; then
-		AWKN=`CHGI Mounted "df -h"`
-		SWKN=`CHGI Size "df -h"`
+		AWKN=`CHGI Mounted "df -P -h"`
+		SWKN=`CHGI Size "df -P -h"`
 		FKG=1
-		DD=`df $DATA_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
-		DT=`df $DATA_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
+		DD=`df -P $DATA_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
+		DT=`df -P $DATA_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
 		DS=`du -sk $DATA_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
 		DY=`echo "$DS 100 $DT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 		TDD=`echo "$DT 1048576"|awk '{printf "%.1f", $1 / $2}'`
@@ -640,8 +638,8 @@ EOFF
 		elif [ "$W" == "l" ]; then
 			WAL_DIR=`ls -ld $DATA_DIR/pg_${WAL_NAME} |awk -F '>' {'print $2'}`
 		fi
-		WD=`df $WAL_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
-		WT=`df $WAL_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
+		WD=`df -P $WAL_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
+		WT=`df -P $WAL_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
 		WS=`du -sk $WAL_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
 		WY=`echo "$WS 100 $WT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 		TWD=`echo "$WT 1048576"|awk '{printf "%.1f", $1 / $2}'`
@@ -649,11 +647,12 @@ EOFF
 		TWS=`BYHW $WS`
 		ARCH_DIR=`echo ${archive_command#*cp %p}`
 		ARCH_DIR=`echo ${ARCH_DIR%%%f*}`
-		AD=`df $ARCH_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
-		AT=`df $ARCH_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
+		AD=`df -P $ARCH_DIR 2>/dev/null|awk {'print $'${AWKN}''}|tail -n 1`
+		AT=`df -P $ARCH_DIR 2>/dev/null|awk {'print $'${SWKN}''}|tail -n 1`
 		AS=`du -sk $ARCH_DIR 2>/dev/null |awk {'print $1'}|tail -n 1`
 		AY=`echo "$AS 100 $AT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}' 2>/dev/null`
 		TAD=`echo "$AT 1048576"|awk '{printf "%.1f", $1 / $2}' 2>/dev/null`
+		TAD=`echo $(printf %.0f $TAD)GB`
 		TAS=`BYHW $AS 2>/dev/null`
 		echo "---------------------------------------------------------------------------" >> ./pbg_ser${TODAY}.log
 		echo "                                 PARTITION USAGE" >> ./pbg_ser${TODAY}.log
@@ -681,31 +680,30 @@ EOFF
 		if [ "$CNT" != "0" ] && [ "$BKB" != "" ];
 		then
 			K=1
-			#PWKN=`CHIG Mounted "ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print \$2'} | xargs df "`
 			PWKN=1
-		        PW=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk {'print $'${PWKN}''} | head -n 1`
+		        PW=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | sort | xargs df -P 2>/dev/null| awk {'print $'${PWKN}''} | head -n 1`
 		        while [ "$PW" != "Mounted" ];
 		        do
 		                PWKN=`echo "$PWKN 1"|awk '{printf "%.0f", $1 + $2 }'`
-		                PW=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk {'print $'${PWKN}''} | head -n 1`
+		                PW=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | sort | xargs df -P 2>/dev/null| awk {'print $'${PWKN}''} | head -n 1`
 		        done
-			PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df -h 2>/dev/null| awk '$'${PWKN}'' | head -n 1\``
+			PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | sort | xargs df -P -h 2>/dev/null| awk '$'${PWKN}'' | head -n 1\``
 			VWKN=`CHGI Size "echo $PARTITION"`
 			TOT=0
 			for (( i=1 ; i <= $CNT; i++ ))  
 			do   
 				BPARTITION=$PARTITION
-				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs df 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``	
+				PARTITION=`echo \`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | sort | xargs df -P 2>/dev/null| awk '{print $'${PWKN}'}' | grep -vw "Mounted"| head -n $i | tail -n 1\``	
 				if [ "$BPARTITION" != "$PARTITION" ]; then
 					if [ "$i" != "1" ]; then
 						NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
-						#PPER=`echo "$NAMK 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
+						PPER=`echo "$NAMK 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 						TYAS=`BYHW $NAMK`
 						CHGE=`echo "사용량 : $TYAS ($PPER)"`
 						CLIN=`grep -n pbg_sayong ./pbg_ser${TODAY}.log | cut -d: -f1`
 						sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser${TODAY}.log
 						NAM=`echo "$NAMK $TOT"|awk '{printf "%.0f", $1 - $2}'`
-						#NPER=`echo "$NAM 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
+						NPER=`echo "$NAM 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 						NYAS=`BYHW $NAM`
 						echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser${TODAY}.log
 						if [ "$BPARTITION" == "$DD" ]; then
@@ -719,30 +717,30 @@ EOFF
 					fi
 					echo "" >> ./pbg_ser${TODAY}.log
 					echo "TABLESPACE PARTITION$K : $PARTITION" >> ./pbg_ser${TODAY}.log
-					#TT=`df -k $PARTITION | awk {'print $'${VWKN}''} | grep -vw "1K-blocks"`
-					#TTA=`echo "$TT 1048576"|awk '{printf "%.1f", $1 / $2}'`
-					#TTA=`echo $(printf %.0f $TTA)GB`
+					TT=`df -P -k $PARTITION | awk {'print $'${VWKN}''} | grep -vw "blocks"`
+					TTA=`echo "$TT 1048576"|awk '{printf "%.1f", $1 / $2}'`
+					TTA=`echo $(printf %.0f $TTA)GB`
 					echo "총용량 : $TTA" >> ./pbg_ser${TODAY}.log
 					echo "pbg_sayong" >> ./pbg_ser${TODAY}.log
 					K=`echo "$K 1"|awk '{printf "%.0f", $1 + $2 }'`
 				fi
-				YANG=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | xargs du -sk 2>/dev/null| awk '{print $1}' | head -n $i | tail -n 1`
+				YANG=`ls -l $DATA_DIR/pg_tblspc/ | awk -F '> ' {'print $2'} | sort | xargs du -sk 2>/dev/null| awk '{print $1}' | head -n $i | tail -n 1`
 				YAS=`BYHW $YANG`
-				#YAP=`echo "$YANG 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
-				echo "  -OID: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F ' ->' {'print $1'} | awk {'print $NF'} | grep -vw "0" | head -n $i | tail -n 1`" ( $YAS $YAP""% )" >> ./pbg_ser${TODAY}.log
-				echo "  -DIR: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F '-> ' {'print $2'} | awk {'print $NF'}| sed '/^$/d' | head -n $i | tail -n 1` >> ./pbg_ser${TODAY}.log
+				YAP=`echo "$YANG 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
+				echo "  -OID: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F ' ->' {'print $1'} | sort | awk {'print $NF'} | grep -vw "0" | head -n $i | tail -n 1`" ( $YAS $YAP""% )" >> ./pbg_ser${TODAY}.log
+				echo "  -DIR: "`ls -l $DATA_DIR/pg_tblspc/ | awk -F '-> ' {'print $2'} | sort | awk {'print $NF'}| sed '/^$/d' | head -n $i | tail -n 1` >> ./pbg_ser${TODAY}.log
 				TOT=`echo "$TOT $YANG"|awk '{printf "%.0f", $1 + $2 }'`
 				echo "" >> ./pbg_ser${TODAY}.log
 			done
 			BPARTITION=$PARTITION
 			NAMK=`du -sk $BPARTITION 2>/dev/null| awk {'print $1'}`
-			#PPER=`echo "$NAMK 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
+			PPER=`echo "$NAMK 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 			TYAS=`BYHW $NAMK`
 			CHGE=`echo "사용량 : $TYAS ($PPER)"`
 			CLIN=`grep -n pbg_sayong ./pbg_ser${TODAY}.log | cut -d: -f1`
 			sed -i "${CLIN}s/.*/$CHGE/g" ./pbg_ser${TODAY}.log
 			NAM=`echo "$NAMK $TOT"|awk '{printf "%.0f", $1 - $2}'`
-			#NPER=`echo "$NAM 100 $TT"|awk '{printf "%.0f", $1 * $2 / $3}'`
+			NPER=`echo "$NAM 100 $TT %"|awk '{printf "%.0f", $1 * $2 / $3; print $4}'`
 			NYAS=`BYHW $NAM`
 			echo "  -기타: $NYAS ($NPER)" >> ./pbg_ser${TODAY}.log
 			if [ "$BPARTITION" == "$DD" ]; then
@@ -1033,13 +1031,17 @@ FROM pg_catalog.pg_tablespace
 WHERE spcname <> 'pg_global'
 ORDER BY 3;
 EOFF
-		chmod 600 ~/.pgpass
-		sed -i '$d' ~/.pgpass
-		cat >> ~/.pgpass <<EOFF
+		if [ "$NOP" == "0" ]; then
+			chmod 600 ~/.pgpass
+			sed -i '$d' ~/.pgpass
+			cat >> ~/.pgpass <<EOFF
 localhost:$PORT:$DB:$USER:$PWD
 EOFF
+		fi
 		"$SPATH"psql $OPT -c "\i ./pbg.sql" >> ./pbg_ser${TODAY}.log
-		chmod 400 ~/.pgpass
+		if [ "$NOP" == "0" ]; then
+			chmod 400 ~/.pgpass
+		fi
 		cat >> ./yaho.sql << EOFF
 \! echo "---------------------------------------------------------------------------"
 \! echo "                             Dead Tuple in TABLE"
@@ -1106,14 +1108,17 @@ EOFF
 				ROPT=""
                         else
 				ROPT="-w -U $USER -p $PORT"
-				chmod 600 ~/.pgpass
-				cat >> ~/.pgpass <<EOFF
+				if [ "$NOP" == "0" ]; then
+					chmod 600 ~/.pgpass
+					cat >> ~/.pgpass <<EOFF
 localhost:$PORT:$DBNM:$USER:$PWD
 EOFF
-				chmod 400 ~/.pgpass
+					chmod 400 ~/.pgpass
+				fi
 			fi
 			"$SPATH"psql $ROPT -d $DBNM -c '\i ./yaho.sql' >> ./pbg_ser${TODAY}.log
-                        if [ "$WRE" != "trust" ]; then
+                        if [ "$WRE" != "trust" ] || [ "$NOP" == "0" ]
+			then
 				chmod 600 ~/.pgpass
 				sed -i '$d' ~/.pgpass
 			fi
@@ -1123,7 +1128,9 @@ EOFF
 			sed -i '$d' ~/.pgpass
 		fi
 		rm -rf ./yaho.sql
-		chmod 400 ~/.pgpass
+		if [ "$NOP" == "0" ]; then
+			chmod 400 ~/.pgpass
+		fi
 		rm -rf ./pbg.sql
 	fi
 	echo "" >> ./pbg_ser${TODAY}.log
