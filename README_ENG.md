@@ -15,7 +15,7 @@
 # pbg_report
 AWR report for PostgreSQL - database check script 
 
-1. This script is ...
+##1. This script is ...
    This script is a shell script that checks PostgreSQL DATABASE.
    There are items asking for information necessary for inspection.
    If you do not enter an exact value for each item, 
@@ -24,7 +24,7 @@ AWR report for PostgreSQL - database check script
 
    
    
-2. Advantages
+##2. Advantages
    (1) This script is divided into two parts.
       The first part checks whether the current server is a database server,
       If it is a database server, check the performance of the database,
@@ -42,7 +42,7 @@ AWR report for PostgreSQL - database check script
 
 
    
-3. The procedure for executing the script is as follows.
+##3. The procedure for executing the script is as follows.
 
 (1) Check, dose this server is a database server or not. (Y / N) input
  - When you type "Y", the script asks for information about the DATA location for the database.
