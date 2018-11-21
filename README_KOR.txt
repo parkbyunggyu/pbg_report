@@ -18,7 +18,7 @@
 AWR report for PostgreSQL - database check script 
 
 
-1. 스트립트에 대한 설명
+##1. 스트립트에 대한 설명
    이 스크립트는 PostgreSQL DATABASE를 점검하는 쉘스크립트로써 
    점검에 필요한 정보들을 묻는 항목들이 있습니다.
    각 항목들에 정확한 값을 입력하지 않을 경우 올바른 값이 입력될때 까지 계속 물어 입력하게 하며, 
@@ -26,7 +26,7 @@ AWR report for PostgreSQL - database check script
 
 
 
-2. 장점 
+##2. 장점 
    1) 이 스크립트는 두개의 부분으로 나뉘어져 있습니다.
       첫번째 부분은 현재 서버가 Database서버인지 확인하고
       Database서버라면 Database의 성능에 대해 점검하고
@@ -43,7 +43,7 @@ AWR report for PostgreSQL - database check script
 
 
 
-3. 스크립트 실행시 진행순서는 다음과 같습니다.
+##3. 스크립트 실행시 진행순서는 다음과 같습니다.
 
 1) Database 서버인지 아닌지 확인 ( Y / N ) 입력
  - Y 입력시 Database에 대한 DATA위치의 정보를 받아, 아래의 정보를 pbg_serYYYYmmddHHMMSS.log에 기록합니다.
