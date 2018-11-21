@@ -25,7 +25,7 @@ AWR report for PostgreSQL - database check script
    
    
 2. Advantages
-   1) This script is divided into two parts.
+   (1) This script is divided into two parts.
       The first part checks whether the current server is a database server,
       If it is a database server, check the performance of the database,
       Unless it is a database server, it does not analyze the performance of the database.
@@ -35,8 +35,8 @@ AWR report for PostgreSQL - database check script
       If you only have a log file, you can analyze the log that occurred in the database use this script.
       You can upload DB log of PostgreSQL server from Window server to Linux server for analysis.
 	  
-   2) This script is text based and can check the database even if the runlevel is 5 or less.
-   3) Even if you do not set "log_line_prefix" in advance like other checking tools, 
+   (2) This script is text based and can check the database even if the runlevel is 5 or less.
+   (3) Even if you do not set "log_line_prefix" in advance like other checking tools, 
       this script reads "log_line_prefix" recorded in log file to analyze
    
 
@@ -44,7 +44,7 @@ AWR report for PostgreSQL - database check script
    
 3. The procedure for executing the script is as follows.
 
-1) Check, dose this server is a database server or not. (Y / N) input
+(1) Check, dose this server is a database server or not. (Y / N) input
  - When you type "Y", the script asks for information about the DATA location for the database.
    And record the following information in "pbg_serYYYYmmddHHMMSS.log".
    * Server version
@@ -68,7 +68,7 @@ AWR report for PostgreSQL - database check script
    * Table list with many dead rows
    * Low utilization Index list
 
-2) The script asks for the full path to the LOG directory that contains the Log to check. 
+(2) The script asks for the full path to the LOG directory that contains the Log to check. 
    Only the PostgreSQL log must exist in the path.
    If there are other files in addition to the log file, 
    it keeps asking for the full path of the log file.
