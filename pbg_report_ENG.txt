@@ -14,10 +14,6 @@
 #   limitations under the License.
 #------------------------------------------------------------------------------------
 
-ERSE=`stty -a | grep erase | head -n 1 | awk -F 'erase = ' {'print $2'} | cut -c 2`
-if [ "$ERSE" == "?" ]; then
-	stty erase ^H
-fi
 TODAY=`date +%Y%m%d%H%M%S`
 
 #------------------------------------------------------------------------------------
